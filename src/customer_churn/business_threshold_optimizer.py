@@ -220,7 +220,7 @@ def run_business_optimization(
             cost_tn=0.0,
             cost_fp=10.0,
             cost_fn=100.0,
-            cost_tp=0.0,
+            cost_tp=10.0,
             label="illustrative default: FN=10x FP",
         )
 
@@ -249,35 +249,35 @@ def build_sensitivity_scenarios() -> list[CostMatrix]:
             cost_tn=0.0,
             cost_fp=10.0,
             cost_fn=10.0,
-            cost_tp=0.0,
+            cost_tp=10.0,
             label="Scenario A: FN and FP balanced (1:1)",
         ),
         CostMatrix(
             cost_tn=0.0,
             cost_fp=10.0,
             cost_fn=50.0,
-            cost_tp=0.0,
+            cost_tp=10.0,
             label="Scenario B: FN moderately more expensive (5x FP)",
         ),
         CostMatrix(
             cost_tn=0.0,
             cost_fp=10.0,
             cost_fn=100.0,
-            cost_tp=0.0,
+            cost_tp=10.0,
             label="Scenario C: FN more expensive (10x FP)",
         ),
         CostMatrix(
             cost_tn=0.0,
             cost_fp=10.0,
             cost_fn=200.0,
-            cost_tp=0.0,
+            cost_tp=10.0,
             label="Scenario D: FN very expensive (20x FP)",
         ),
         CostMatrix(
             cost_tn=0.0,
             cost_fp=50.0,
             cost_fn=100.0,
-            cost_tp=0.0,
+            cost_tp=50.0,
             label="Scenario E: FP more expensive than FN (0.5x)",
         ),
     ]
@@ -615,7 +615,7 @@ def run_phase11(
             cost_tn=0.0,
             cost_fp=10.0,
             cost_fn=100.0,
-            cost_tp=0.0,
+            cost_tp=10.0,
             label="illustrative default: FN=10x FP",
         )
 

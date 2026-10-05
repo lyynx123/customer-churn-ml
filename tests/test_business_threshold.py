@@ -47,7 +47,7 @@ class TestBusinessOptimization:
 
     def test_optimize_threshold_basic(self):
         y_true, y_proba = self._synthetic_oof_data()
-        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=0.0)
+        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=10.0)
         result = optimize_threshold_business(y_true, y_proba, costs)
         # With these costs, we expect the optimizer to favour higher recall
         # (i.e., lower threshold) because FN is expensive.
@@ -77,7 +77,7 @@ class TestBusinessOptimization:
         y_true, y_proba = self._synthetic_oof_data()
         # Balanced FP and FN costs → optimizer should pick threshold maximizing overall
         # accuracy (which is close to 0.5 for balanced data)
-        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=10.0, cost_tp=0.0)
+        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=10.0, cost_tp=10.0)
         result = optimize_threshold_business(y_true, y_proba, costs)
         # With symmetric costs, we expect threshold close to 0.5 (midpoint)
         assert 0.4 <= result.selected_threshold <= 0.6
@@ -86,12 +86,12 @@ class TestBusinessOptimization:
         y_true, y_proba = self._synthetic_oof_data()
         with pytest.raises(ValueError):
             # Negative FP cost
-            costs = CostMatrix(cost_tn=0.0, cost_fp=-5.0, cost_fn=10.0, cost_tp=0.0)
+            costs = CostMatrix(cost_tn=0.0, cost_fp=-5.0, cost_fn=10.0, cost_tp=10.0)
             optimize_threshold_business(y_true, y_proba, costs)
 
     def test_optimize_invalid_threshold_grid(self):
         y_true, y_proba = self._synthetic_oof_data()
-        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=0.0)
+        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=10.0)
         # Include an invalid threshold (>1) in custom grid
         with pytest.raises(ValueError):
             optimize_threshold_business(
@@ -104,7 +104,7 @@ class TestBusinessOptimization:
     def test_optimize_mismatch_lengths(self):
         y_true = [0, 1, 0]
         y_proba = [0.1, 0.9]
-        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=0.0)
+        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=10.0)
         with pytest.raises(ValueError):
             optimize_threshold_business(y_true, y_proba, costs)
 
@@ -124,7 +124,7 @@ class TestBusinessOptimization:
         y_true = [0, 0, 1, 1]
         # Probabilities produce same confusion matrix for thresholds 0.4 and 0.5
         y_proba = [0.2, 0.8, 0.6, 0.9]
-        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=0.0)
+        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=10.0)
         grid = [0.4, 0.5]
         result = optimize_threshold_business(y_true, y_proba, costs, threshold_grid=grid)
         # With equal cost, tie-breaking prefers higher recall → lower threshold (0.4)
@@ -133,14 +133,14 @@ class TestBusinessOptimization:
     def test_optimize_extreme_cost_scenario(self):
         # Scenario where FP cost is far higher than FN cost.
         y_true, y_proba = self._synthetic_oof_data()
-        costs = CostMatrix(cost_tn=0.0, cost_fp=200.0, cost_fn=10.0, cost_tp=0.0)
+        costs = CostMatrix(cost_tn=0.0, cost_fp=200.0, cost_fn=10.0, cost_tp=200.0)
         result = optimize_threshold_business(y_true, y_proba, costs)
         # In this case, optimizer should favour higher threshold to reduce FP.
         assert result.selected_threshold > 0.5
 
     def test_optimize_returns_all_results(self):
         y_true, y_proba = self._synthetic_oof_data()
-        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=0.0)
+        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=10.0)
         result = optimize_threshold_business(y_true, y_proba, costs)
         # Verify that all thresholds in the default grid are present.
         expected_len = len(build_business_threshold_grid())
@@ -149,7 +149,7 @@ class TestBusinessOptimization:
     def test_optimize_consistency(self):
         # Run optimizer twice with same data and ensure deterministic result.
         y_true, y_proba = self._synthetic_oof_data()
-        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=0.0)
+        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=10.0)
         r1 = optimize_threshold_business(y_true, y_proba, costs)
         r2 = optimize_threshold_business(y_true, y_proba, costs)
         assert r1.selected_threshold == r2.selected_threshold

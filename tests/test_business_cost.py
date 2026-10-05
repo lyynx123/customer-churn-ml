@@ -118,8 +118,8 @@ class TestComputeBusinessCostMetrics:
     """Test full business cost metrics computation from y_true/y_proba."""
 
     def test_perfect_predictions(self):
-        """Perfect predictions yield minimum possible cost."""
-        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=0.0)
+        """Perfect predictions yield minimum cost (intervention cost for TPs)."""
+        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=10.0)
         y_true = [0, 0, 1, 1]
         y_proba = [0.1, 0.2, 0.9, 0.8]
         result = compute_business_cost_metrics(
@@ -129,13 +129,13 @@ class TestComputeBusinessCostMetrics:
         assert result["fp"] == 0
         assert result["fn"] == 0
         assert result["tp"] == 2
-        assert result["total_cost"] == 0.0
+        assert result["total_cost"] == 2 * 10.0  # Only TP intervention costs
         assert result["precision"] == 1.0
         assert result["recall"] == 1.0
 
     def test_worst_predictions(self):
         """Worst predictions yield maximum cost."""
-        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=0.0)
+        costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=10.0)
         y_true = [0, 0, 1, 1]
         y_proba = [0.9, 0.8, 0.1, 0.2]
         result = compute_business_cost_metrics(

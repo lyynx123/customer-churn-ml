@@ -28,10 +28,10 @@ class BusinessCostConfig(TypedDict):
         - FP: Churn predicted but customer stays. Cost = retention campaign
               outreach expense (customer receives an unnecessary retention
               offer, e.g., a discount or incentive).
+        - TP: Churn predicted and customer churns but is targeted for
+              intervention. Cost = retention campaign outreach expense.
         - FN: No churn predicted but customer churns. Cost = lost customer
               lifetime value (customer leaves without being retained).
-        - TP: Churn predicted and customer is retained. Cost = 0 (correct
-              intervention avoids churn).
 
     The FN/FP ratio is the key driver of threshold placement.
     """
@@ -183,7 +183,7 @@ def cost_per_predicted_churn(
     n_predicted_churn = fp + tp
     if n_predicted_churn == 0:
         return 0.0
-    # Only FP has cost in prediction context (TP interventions are "correct")
+    # Both FP and TP receive intervention (TP interventions are "correct" but still cost money)
     total_cost = fp * costs.cost_fp + tp * costs.cost_tp
     return total_cost / n_predicted_churn
 
@@ -306,12 +306,16 @@ def build_default_cost_matrix() -> CostMatrix:
 
     These values are illustrative assumptions only.
     They represent a telecom churn scenario where missing a churner (FN)
-    is more costly than an unnecessary retention intervention (FP).
+    is more costly than a retention intervention (FP/TP).
 
     Assumption rationale:
-        - A customer lifetime value (CLV) for telecom churn is ~$500-800
-        - A retention offer costs ~$5-20 per customer
-        - We use FN/FN ratio of 10:1 (FN is 10x more expensive than FP)
+        - FP: Cost of retention intervention given to customer who stays.
+        - TP: Cost of retention intervention given to customer who churns.
+        - Since both receive intervention, cost_fp and cost_tp are equal.
+        - FN: Opportunity/loss cost when customer churns without detection.
+        - TN: No action, no cost.
+        - We use illustrative values: FN=100, FP=10, TP=10, TN=0.
+        - This maintains FN/FP ratio of 10:1.
 
     These are scenario assumptions. Replace with real business values
     before production use.
@@ -320,7 +324,7 @@ def build_default_cost_matrix() -> CostMatrix:
         cost_tn=0.0,
         cost_fp=10.0,
         cost_fn=100.0,
-        cost_tp=0.0,
+        cost_tp=10.0,
         label="illustrative default: FN=10x FP",
     )
 

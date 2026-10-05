@@ -274,6 +274,62 @@ result = predictor.predict_single(sample, threshold=0.45)
 
 **Environment**: Python 3.12+, `uv` package manager
 
+## Business Cost Optimization (Phase 11)
+
+**Why a new threshold?**  The F1‑optimal threshold (0.55, from Phase 8B) maximises the harmonic mean of precision and recall, but it does not consider the actual financial impact of false positives (unnecessary retention offers) versus false negatives (missed churners).  When a missed churn is substantially more costly than an unnecessary retention, the optimal operational threshold shifts.
+
+**Cost matrix (illustrative assumptions)**
+```text
+cost_tn = 0.0   # No cost for true negatives (correctly predicted non‑churn)
+cost_fp = 10.0  # Cost of an unnecessary retention intervention
+cost_fn = 100.0 # Cost of a lost customer (missed churn)
+cost_tp = 0.0   # Correctly retained churner – no additional cost
+```
+These values are **illustrative only**; replace them with real business figures before production use.
+
+**Decision‑layer workflow**
+```
+OOF predictions (training data only)
+        ↓
+Business‑cost calculation per threshold
+        ↓
+Threshold grid search (0.01 → 0.99, step 0.01)
+        ↓
+Select threshold that **minimises total expected cost**
+        ↓
+Apply the selected threshold to the **frozen test set** for final evaluation
+```
+The optimizer never touches the frozen test data when selecting the threshold.
+
+**Reproducible command**
+```bash
+uv run python -m customer_churn.business_threshold_optimizer
+```
+Running the command produces the following key outputs (values shown are those from the current illustrative cost matrix):
+
+- **OOF‑optimal business threshold:** `0.14`
+- **Confusion matrix (OOF):** `TN=948, FP=1587, FN=19, TP=897`
+- **Total expected cost (OOF):** `$17 770`
+- **Average cost per observation (OOF):** `$5.15`
+- **Precision / Recall / F1 (OOF):** `0.361 / 0.979 / 0.528`
+
+- **Frozen‑test evaluation (using the selected threshold):**
+  - `TN=564, FP=988, FN=15, TP=546`
+  - `Total cost = $11 380`
+  - `Average cost per observation = $5.39`
+  - `Precision = 0.356, Recall = 0.973, F1 = 0.521`
+
+**Artifacts generated**
+- `models/business_cost_analysis.json` – machine‑readable summary of the optimisation and test evaluation.
+- `models/business_cost_thresholds.csv` – per‑threshold metrics and costs.
+- `notebooks/figures/business_cost_curve.png` – cost vs. threshold plot (minimum highlighted).
+- `models/cost_sensitivity_analysis.csv` – illustrative sensitivity scenarios showing how the optimal threshold moves as the FN/FP cost ratio changes.
+
+**How to customise**
+Replace the `CostMatrix` values in `src/customer_churn/business_cost.py` or pass a custom `CostMatrix` instance to `run_phase11()` if you need different assumptions.
+
+---
+
 ## Testing & Code Quality
 
 ```bash

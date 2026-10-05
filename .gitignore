@@ -1,0 +1,17 @@
+# Byte compiled dependencies are managed with uv.
+# Add .gitignore entries for virtual envs, caches, data artifacts.
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+.env*
+.ipynb_checkpoints/
+.DS_Store
+*.log
+.data/
+models/
+
+# Local data and evaluation artifacts
+data/
+*.npy

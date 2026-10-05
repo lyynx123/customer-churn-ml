@@ -1,0 +1,47 @@
+{
+  "objective": "minimize_expected_business_cost",
+  "selected_threshold": 0.28,
+  "cost_assumptions": {
+    "cost_tn": 0.0,
+    "cost_fp": 10.0,
+    "cost_fn": 100.0,
+    "cost_tp": 10.0,
+    "label": "illustrative default: FN=10x FP"
+  },
+  "optimization_summary": {
+    "tie_breaking_rule": "1. minimum total_cost, 2. higher recall, 3. lower threshold",
+    "threshold_grid_step": 0.01,
+    "n_thresholds_evaluated": 99
+  },
+  "business_metrics": {
+    "total_cost": 26650.0,
+    "average_cost_per_customer": 7.722399304549406,
+    "cost_per_predicted_churn": 10.0,
+    "precision": 0.42886075949367086,
+    "recall": 0.9246724890829694,
+    "f1": 0.585956416464891,
+    "accuracy": 0.6531440162271805,
+    "specificity": 0.5550295857988166,
+    "npv": 0.9532520325203252
+  },
+  "model_level_metrics": {
+    "roc_auc": 0.8389571503390484,
+    "pr_auc": 0.6398159657940831
+  },
+  "confusion_matrix": {
+    "tn": 1407,
+    "fp": 1128,
+    "fn": 69,
+    "tp": 847
+  },
+  "tie_breaking_rule": "1. minimum total_cost, 2. higher recall, 3. lower threshold",
+  "optimization_data": {
+    "data_source": "OOF (5-fold StratifiedKFold cross_val_predict on training data)",
+    "test_set_used_for_optimization": false,
+    "cv_config": {
+      "n_splits": 5,
+      "shuffle": true,
+      "random_state": 42
+    }
+  }
+}

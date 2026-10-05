@@ -89,7 +89,7 @@ def build_business_threshold_grid(
     if start >= end:
         raise ValueError(f"start={start} must be less than end={end}.")
 
-    n_steps = int(round((end - start) / step)) + 1
+    n_steps = round((end - start) / step) + 1
     grid = [round(start + i * step, 2) for i in range(n_steps)]
     grid = [t for t in grid if 0.0 <= t <= 1.0]
     return sorted(grid)
@@ -175,7 +175,7 @@ def optimize_threshold_business(
         raise ValueError("Probabilities must be in [0, 1].")
 
     if set(np.unique(y_true)) - {0, 1}:
-        raise ValueError(f"y_true must contain only 0/1 labels.")
+        raise ValueError("y_true must contain only 0/1 labels.")
 
     if threshold_grid is None:
         threshold_grid = build_business_threshold_grid()
@@ -566,8 +566,8 @@ def evaluate_on_test_with_business_threshold(
     Returns:
         BusinessCostResult with test-set metrics.
     """
-    from .final_evaluation import build_final_pipeline
     from .features import TARGET_COL, load_data
+    from .final_evaluation import build_final_pipeline
 
     train_df = load_data("train")
     test_df = load_data("test")
@@ -635,12 +635,13 @@ def run_phase11(
     result = run_business_optimization(costs)
 
     # Get model-level metrics on test set for the summary
-    from .final_evaluation import build_final_pipeline, compute_metrics
-    from .features import TARGET_COL, load_data
     from sklearn.metrics import (
         average_precision_score,
         roc_auc_score,
     )
+
+    from .features import TARGET_COL, load_data
+    from .final_evaluation import build_final_pipeline
 
     train_df = load_data("train")
     test_df = load_data("test")
@@ -722,25 +723,25 @@ def run_phase11(
           f"FP={test_metrics['fp']}, FN={test_metrics['fn']}, "
           f"TP={test_metrics['tp']}")
 
-    print(f"\nSensitivity Analysis (OOF):")
+    print("\nSensitivity Analysis (OOF):")
     print(f"  {'Scenario':<40} {'FN/FP':>8} {'Threshold':>12} {'Cost':>12}")
     print(f"  {'-'*40} {'-'*8} {'-'*12} {'-'*12}")
     for s in sensitivity:
         print(f"  {s['scenario_label']:<40} {s['fn_to_fp_ratio']:>8.1f} "
               f"{s['optimal_threshold']:>12.2f} {s['optimal_total_cost']:>12.2f}")
 
-    print(f"\nArtifacts saved:")
+    print("\nArtifacts saved:")
     for name, path in artifact_paths.items():
         print(f"  {name}: {path}")
 
     print(f"\nTie-breaking rule: {result.tie_breaking_rule}")
 
-    print(f"\nNOTE: F1-optimal threshold from Phase 8B was 0.55.")
+    print("\nNOTE: F1-optimal threshold from Phase 8B was 0.55.")
     print(f"      Business-optimal threshold from Phase 11 is {result.selected_threshold:.2f}.")
-    print(f"      The business threshold is optimal for the specified cost matrix:")
+    print("      The business threshold is optimal for the specified cost matrix:")
     print(f"      {costs.label}.")
-    print(f"      These differ because business cost optimization minimizes expected")
-    print(f"      financial loss, not F1 score.")
+    print("      These differ because business cost optimization minimizes expected")
+    print("      financial loss, not F1 score.")
 
     return {
         "optimization_result": result,

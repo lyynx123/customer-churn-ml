@@ -4,10 +4,10 @@ import pytest
 
 from customer_churn.business_cost import (
     CostMatrix,
-    calculate_expected_cost,
-    cost_per_predicted_churn,
     average_cost_per_customer,
+    calculate_expected_cost,
     compute_business_cost_metrics,
+    cost_per_predicted_churn,
     validate_costs,
 )
 

@@ -9,8 +9,8 @@ Threshold optimization uses OOF (out-of-fold) predictions from training data
 only. The frozen test set is NEVER used for threshold selection.
 """
 
-from dataclasses import dataclass, field
-from typing import Any, TypedDict
+from dataclasses import dataclass
+from typing import TypedDict
 
 import numpy as np
 from numpy.typing import NDArray

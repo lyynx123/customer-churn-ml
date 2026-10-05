@@ -1,13 +1,11 @@
 """Phase 11 PR #1 Review Fix Tests."""
 
-import pytest
 import numpy as np
 
 from customer_churn.business_cost import (
     CostMatrix,
     build_default_cost_matrix,
     calculate_expected_cost,
-    compute_business_cost_metrics,
 )
 from customer_churn.business_threshold_optimizer import (
     optimize_threshold_business,
@@ -62,8 +60,8 @@ def test_optimization_uses_oof_not_test():
 
 def test_optimizer_does_not_read_test_split(monkeypatch):
     """Guard against test-set leakage: optimizer must not load the test split."""
-    import customer_churn.threshold as threshold_mod
     import customer_churn.features as features_mod
+    import customer_churn.threshold as threshold_mod
 
     forbidden: list[str] = []
 

@@ -3,13 +3,11 @@
 import pytest
 
 from customer_churn.business_threshold_optimizer import (
+    CostMatrix,
     build_business_threshold_grid,
     optimize_threshold_business,
     run_business_optimization,
-    CostMatrix,
 )
-
-from customer_churn.threshold import get_oof_predictions
 
 
 class TestThresholdGrid:

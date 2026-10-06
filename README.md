@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project implements a production-ready machine learning pipeline to predict customer churn for a telecommunications provider. The system identifies customers at high risk of churning so that retention teams can proactively intervene and reduce revenue loss.
+This project implements a production-oriented machine learning pipeline to predict customer churn for a telecommunications provider. The system identifies customers at high risk of churning so that retention teams can proactively intervene and reduce revenue loss.
 
 ## Business Problem
 
@@ -44,14 +44,17 @@ customer_churn/
 │   └── figures/             # Generated plots (ROC, PR, CMs, threshold curves)
 ├── src/customer_churn/      # Core package
 │   ├── __init__.py
-19:     config.py            # Paths, random seed
-20:     data.py              # Loading, cleaning, validation
-21:     features.py          # Preprocessing pipeline (ColumnTransformer)
-22:     models.py            # Baseline models, CV evaluation
-22:     tune.py              # Hyperparameter tuning (RandomizedSearchCV)
-23:     threshold.py         # OOF threshold analysis (Phase 8B)
-24:     evaluate.py          # Phase 7: baseline test eval
-25:     final_evaluation.py  # Phase 8C: final test eval
+│   ├── business_cost.py      # Business cost matrix definitions
+│   ├── business_threshold_optimizer.py # Cost-based threshold optimization
+│   ├── config.py            # Paths, random seed
+│   ├── data.py              # Loading, cleaning, validation
+│   ├── error_analysis.py    # Phase 10: descriptive error analysis
+│   ├── evaluate.py          # Phase 7: baseline test eval
+│   ├── features.py          # Preprocessing pipeline (ColumnTransformer)
+│   ├── final_evaluation.py  # Phase 8C/11: final test evaluation
+│   ├── models.py            # Baseline models, CV evaluation
+│   ├── predict.py           # Inference interface & threshold management
+│   └── tune.py              # Hyperparameter tuning (RandomizedSearchCV)
 ├── tests/                   # Unit & integration tests
 ├── pyproject.toml
 └── README.md
@@ -183,7 +186,7 @@ The small generalization gap suggests the model is not overfitting; calibration 
 - If false alarms are costlier → prefer 0.60
 - Balanced F1-optimal → 0.55
 
-> **No business cost matrix is currently defined.** Threshold selection for production requires stakeholder input on relative costs of false positives vs. false negatives.
+> **The project now implements business cost optimization (Phase 11).** Threshold selection for production is performed by minimizing an expected cost matrix based on stakeholder input.
 
 ## Reproducibility
 
@@ -283,41 +286,37 @@ result = predictor.predict_single(sample, threshold=0.45)
 cost_tn = 0.0   # No cost for true negatives (correctly predicted non‑churn)
 cost_fp = 10.0  # Cost of an unnecessary retention intervention
 cost_fn = 100.0 # Cost of a lost customer (missed churn)
-cost_tp = 0.0   # Correctly retained churner – no additional cost
+cost_tp = 10.0  # Cost of retention intervention given to a correctly predicted churner
 ```
-These values are **illustrative only**; replace them with real business figures before production use.
+These values are **illustrative assumptions only**. Predicted churners (both FP and TP) receive a retention intervention, thus both incur the intervention cost. These assumptions must be validated or replaced with real financial and stakeholder inputs before production use.
 
 **Decision‑layer workflow**
-```
-OOF predictions (training data only)
-        ↓
-Business‑cost calculation per threshold
-        ↓
-Threshold grid search (0.01 → 0.99, step 0.01)
-        ↓
-Select threshold that **minimises total expected cost**
-        ↓
-Apply the selected threshold to the **frozen test set** for final evaluation
-```
-The optimizer never touches the frozen test data when selecting the threshold.
+1. Generate Out-of-Fold (OOF) probability predictions using training data only.
+2. Build a deterministic threshold grid (0.01 to 0.99, step 0.01).
+3. Calculate the expected business cost for each threshold using the cost matrix.
+4. Select the threshold that **minimizes total expected cost** on OOF data.
+5. Evaluate the selected threshold **once** on the frozen held-out test set for final verification.
+
+The frozen test set is strictly reserved for evaluation and does **not** participate in threshold selection.
 
 **Reproducible command**
 ```bash
 uv run python -m customer_churn.business_threshold_optimizer
 ```
-Running the command produces the following key outputs (values shown are those from the current illustrative cost matrix):
+Running the optimization with the illustrative cost matrix (FN=100, FP=10, TP=10, TN=0) yields:
 
-- **OOF‑optimal business threshold:** `0.14`
-- **Confusion matrix (OOF):** `TN=948, FP=1587, FN=19, TP=897`
-- **Total expected cost (OOF):** `$17 770`
-- **Average cost per observation (OOF):** `$5.15`
-- **Precision / Recall / F1 (OOF):** `0.361 / 0.979 / 0.528`
+- **OOF‑optimal business threshold:** `0.28`
+- **OOF Metrics (at 0.28):**
+  - `TN=1407, FP=1128, FN=69, TP=847`
+  - `Precision = 0.42886, Recall = 0.92467, F1 = 0.58596, Accuracy = 0.65314`
+  - `Total expected cost = $26,650`
+  - `Average cost per customer = $7.72`
 
-- **Frozen‑test evaluation (using the selected threshold):**
-  - `TN=564, FP=988, FN=15, TP=546`
-  - `Total cost = $11 380`
-  - `Average cost per observation = $5.39`
-  - `Precision = 0.356, Recall = 0.973, F1 = 0.521`
+- **Frozen‑test evaluation (at 0.28):**
+  - `TN=862, FP=690, FN=46, TP=515`
+  - `Precision = 0.4274, Recall = 0.9180, F1 = 0.5832, Accuracy = 0.6517`
+  - `Total cost = $16,650`
+  - `Average cost per customer = $7.88`
 
 **Artifacts generated**
 - `models/business_cost_analysis.json` – machine‑readable summary of the optimisation and test evaluation.
@@ -333,13 +332,13 @@ Replace the `CostMatrix` values in `src/customer_churn/business_cost.py` or pass
 ## Testing & Code Quality
 
 ```bash
-uv run pytest          # 62 tests pass
+uv run pytest          # 105 tests pass
 uv run ruff check .    # Linting clean
-uv run mypy src        # Type checking clean
-uv run pyright         # Type checking clean (main src; test files have pre-existing sklearn stub issues)
+uv run mypy src tests  # Type checking clean
+uv run pyright         # Type checking clean (main src)
 ```
 
-**Test coverage**: 62 tests covering data loading, preprocessing, pipeline structure, model configs, threshold configs, metric correctness, OOF leakage checks, and evaluation protocol.
+**Test coverage**: 105 tests covering data loading, preprocessing, pipeline structure, model configs, threshold optimization, metric correctness, OOF leakage checks, and business cost logic.
 
 ## Artifacts
 
@@ -360,7 +359,7 @@ notebooks/figures/
 ## Limitations
 
 1. **Single held-out test split** — no temporal or geographic validation
-2. **No business cost matrix** — threshold selection assumes equal misclassification costs
+2. **Illustrative business cost matrix** — TN=0, FP=10, FN=100, TP=10. These assumptions must be validated or replaced with real financial and stakeholder inputs before production use.
 3. **No temporal validation** — data not evaluated for temporal stability
 4. **No calibration analysis** — probability scores not assessed for calibration
 5. **No production monitoring** — no drift detection or performance tracking in place
@@ -369,11 +368,10 @@ notebooks/figures/
 
 ## Future Work
 
-- Business-cost-based threshold optimization
 - Temporal/rolling validation
 - Probability calibration (Platt scaling / isotonic regression)
 - Model monitoring & drift detection
-- Model serialization (joblib/ONNX) & Python inference interface
+- Model serialization (joblib/ONNX)
 - Experiment tracking (MLflow/Weights & Biases)
 - Feature importance analysis & SHAP explanations
 

@@ -2,5 +2,17 @@
 """Customer churn package initialization."""
 
 from .contract import DataContract, ValidationError, ValidationResult
+from .portable_predict import (
+    InferenceMetadata,
+    PortableChurnPredictor,
+    PortableDataContract,
+)
 
-__all__ = ["DataContract", "ValidationError", "ValidationResult"]
+__all__ = [
+    "DataContract",
+    "InferenceMetadata",
+    "PortableChurnPredictor",
+    "PortableDataContract",
+    "ValidationError",
+    "ValidationResult",
+]

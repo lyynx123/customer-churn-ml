@@ -340,23 +340,70 @@ uv run pyright         # Type checking clean (main src)
 
 **Test coverage**: 105 tests covering data loading, preprocessing, pipeline structure, model configs, threshold optimization, metric correctness, OOF leakage checks, and business cost logic.
 
+## SHAP Explainability (Phase 13)
+
+**Purpose**: Post-hoc explanation of the production RandomForest model to understand feature contributions to churn probability.
+
+**Method**: `shap.TreeExplainer` with `model_output="raw"` and default `feature_perturbation="tree_path_dependent"`. The explained model output is the positive-class prediction from the production scikit-learn RandomForest (P(churn=Yes)). Under this configuration, Tree SHAP returns values in the model's native output space (probability space for this estimator). `tree_path_dependent` is the default feature-dependence/background assumption for Tree SHAP; it uses the tree structure to define the background and does not use an interventional background dataset.
+
+**Production boundary**: Only the Phase 8C/11 uncalibrated RandomForest (`models/final_pipeline.joblib`) is explained. Phase 12 calibrated model is NOT explained (rejected experiment).
+
+**Leakage-safe design**:
+- **Reference/reproducibility sample**: 500 deterministic samples from training split only (never test). Under `tree_path_dependent`, Tree SHAP does not use an interventional background dataset; the returned sample is retained for reproducibility and reference.
+- **Explanation data**: Frozen test set used **only for post-hoc visualization**; never influences training, tuning, calibration, threshold selection, or model adoption.
+- No model/preprocessor refitting during explanation.
+
+**Output semantics**:
+- Positive class = `Churn=Yes` (class index 1).
+- Expected value (class 1) = expected positive-class model output under the configured tree-path-dependent assumption (~0.50).
+- SHAP values in probability space: `expected_value + sum(SHAP) = P(churn=Yes)`.
+- Positive SHAP → pushes toward churn; negative → pushes away.
+
+**Artifacts generated**:
+| Artifact | Path | Description |
+|----------|------|-------------|
+| Global importance (transformed) | `models/shap_global_importance.csv` | 45 features ranked by mean \|SHAP\| |
+| Global importance (original grouped) | `models/shap_grouped_importance.csv` | 19 original features aggregated (sum of \|SHAP\| avoids one-hot cancellation) |
+| Feature mapping | `models/shap_feature_mapping.json` | Transformed → original feature mapping |
+| Local explanations | `models/shap_local_explanations.json` | TP/TN/FP/FN waterfall data (threshold 0.28) |
+| Provenance metadata | `models/shap_provenance.json` | Model config, SHAP version, background/explanation sources, leakage note |
+| Summary plot | `notebooks/figures/shap_summary.png` | Beeswarm plot (top 20 features) |
+| Bar plot | `notebooks/figures/shap_bar.png` | Top 20 mean \|SHAP\| |
+| Waterfall plots | `notebooks/figures/shap_waterfall_{tp,tn,fp,fn}.png` | Per-sample contributions |
+
+**Top global features (original, grouped)**:
+| Original Feature | Mean \|SHAP\| | Mean Signed SHAP |
+|------------------|--------------|------------------|
+| Contract | 0.125 | -0.038 |
+| InternetService | 0.061 | -0.003 |
+| TechSupport | 0.053 | -0.019 |
+| tenure | 0.050 | -0.019 |
+| OnlineSecurity | 0.050 | -0.019 |
+
+**Local examples (threshold 0.28)**:
+| Sample | Index | P(churn) | Pred | Actual | Top positive contributors |
+|--------|-------|----------|------|--------|---------------------------|
+| TP | 0 | 0.775 | 1 | 1 | Contract_Month-to-month (+0.27), TechSupport_No (+0.08), ... |
+| TN | 1 | 0.044 | 0 | 0 | Contract_Two_year (-0.11), tenure (-0.09), ... |
+| FP | 10 | 0.280 | 1 | 0 | Contract_Month-to-month (+0.15), MonthlyCharges (+0.04), ... |
+| FN | 7 | 0.273 | 0 | 1 | Contract_Two_year (-0.09), TotalCharges (-0.07), ... |
+
+**Reproducible command**:
+```bash
+uv run python -m customer_churn.explain
+```
+
+**Limitations & correct interpretation**:
+- SHAP explains **model behavior**, not ground-truth causality.
+- Correlated features (one-hot) share importance; grouped aggregation mitigates but does not eliminate this.
+- One-hot cancellation is mitigated by using mean of sum of absolute SHAP per original feature.
+- Frozen-test examples are **illustrative only**; not a statistical validation.
+- Phase 12 calibrated model is NOT explained (it was evaluated but not adopted).
+- Do not say "SHAP proves why a customer churns" — say "SHAP explains how the trained model's features contribute to its churn probability prediction."
+
+---
+
 ## Artifacts
-
-```
-models/
-├── tuning_results.json          # Phase 8A hyperparameter search results
-├── threshold_analysis.json      # Phase 8B OOF threshold analysis
-├── final_test_evaluation.json   # Phase 8C final test results
-notebooks/figures/
-├── final_threshold_comparison_test.png
-├── final_confusion_matrix_threshold_045.png
-├── final_confusion_matrix_threshold_050.png
-├── final_confusion_matrix_threshold_055.png
-├── final_confusion_matrix_threshold_060.png
-└── ... (other Phase 7/8B figures)
-```
-
-## Limitations
 
 1. **Single held-out test split** — no temporal or geographic validation
 2. **Illustrative business cost matrix** — TN=0, FP=10, FN=100, TP=10. These assumptions must be validated or replaced with real financial and stakeholder inputs before production use.

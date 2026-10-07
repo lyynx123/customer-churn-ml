@@ -290,6 +290,7 @@ Actual Yes   151    410
 7. **Class imbalance** (~26.5% churn) handled via `class_weight='balanced'` only
 8. **Limited interpretability** — Random Forest is less directly interpretable than linear models
 9. **No external validation** — single dataset/source
+10. **Post-hoc explainability (Phase 13)** — SHAP TreeExplainer provides global feature importance, grouped original-feature aggregation, and local waterfall explanations for TP/TN/FP/FN on the frozen test set. SHAP values are in probability space for class 1 (churn). See Phase 13 artifacts and README for details.
 
 ---
 
@@ -428,7 +429,7 @@ Future work (if deployed):
 * Temporal validation
 * Model monitoring & drift detection
 * Retraining strategy / CI-CD for model updates
-* Advanced interpretability (SHAP, PDPs)
+* Advanced interpretability (SHAP, PDPs) — **implemented in Phase 13**
 * Production monitoring & drift detection
 * Retraining strategy / CI-CD for model updates
 

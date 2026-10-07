@@ -17,6 +17,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 
+from .contract import DataContract
 from .features import TARGET_COL, build_preprocessor, load_data
 from .models import build_model_pipeline
 
@@ -35,12 +36,12 @@ FINAL_RF_CONFIG = {
 # Threshold candidates from Phase 8B
 THRESHOLD_CANDIDATES = [0.45, 0.50, 0.55, 0.60]
 
-# Default threshold from Phase 8B (OOF F1-optimal candidate)
-DEFAULT_THRESHOLD = 0.55
+# Default threshold from Phase 11 (business cost optimization on OOF probabilities)
+DEFAULT_THRESHOLD = 0.28
 THRESHOLD_METADATA = {
-    "value": 0.55,
-    "selection_method": "OOF F1-optimal candidate",
-    "source_phase": "Phase 8B",
+    "value": 0.28,
+    "selection_method": "Business cost optimization on OOF probabilities",
+    "source_phase": "Phase 11",
 }
 
 # Model artifact paths
@@ -131,6 +132,8 @@ class ChurnPredictor:
     """Inference wrapper for the churn prediction model.
 
     Provides a clean API for making predictions on new customer data.
+    The DataContract validates all inputs at the production boundary
+    before they reach the model pipeline.
     """
 
     def __init__(
@@ -146,7 +149,7 @@ class ChurnPredictor:
                       If None, loads from pipeline_path.
             pipeline_path: Path to serialized pipeline. Used if pipeline is None.
             threshold: Decision threshold for positive class (churn).
-                       Defaults to 0.55 (OOF F1-optimal from Phase 8B).
+                       Defaults to 0.28 (business cost optimization from Phase 11).
         """
         if pipeline is not None:
             self.pipeline = pipeline
@@ -158,6 +161,9 @@ class ChurnPredictor:
         # Initialize threshold metadata BEFORE setting threshold
         self._threshold_metadata = THRESHOLD_METADATA.copy()
         self.threshold = threshold
+
+        # DataContract uses the EXACT pipeline instance owned by this predictor
+        self._contract = DataContract(self.pipeline)
 
     @property
     def threshold(self) -> float:
@@ -174,6 +180,26 @@ class ChurnPredictor:
     def threshold_metadata(self) -> dict:
         return self._threshold_metadata.copy()
 
+    def _infer_proba(self, X_validated: pd.DataFrame) -> np.ndarray:
+        """Private inference on already-validated data.
+
+        This method assumes X_validated has already passed DataContract validation
+        and has columns in the exact order expected by the preprocessor.
+
+        Args:
+            X_validated: Validated DataFrame with features in preprocessor order.
+
+        Returns:
+            Array of churn probabilities (probability of class 1 = churn).
+        """
+        return self.pipeline.predict_proba(X_validated)[:, 1]
+
+    def _infer_predict(self, X_validated: pd.DataFrame, threshold: float | None = None) -> np.ndarray:
+        """Private inference for binary predictions on validated data."""
+        proba = self._infer_proba(X_validated)
+        thresh = threshold if threshold is not None else self.threshold
+        return (proba >= thresh).astype(int)
+
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
         """Predict churn probabilities for input data.
 
@@ -183,8 +209,12 @@ class ChurnPredictor:
 
         Returns:
             Array of churn probabilities (probability of class 1 = churn).
+
+        Raises:
+            ValidationError: If input fails DataContract validation.
         """
-        return self.pipeline.predict_proba(X)[:, 1]
+        validated = self._contract.validate(X)
+        return self._infer_proba(validated.validated_data)
 
     def predict(self, X: pd.DataFrame, threshold: float | None = None) -> np.ndarray:
         """Predict churn class labels.
@@ -195,10 +225,13 @@ class ChurnPredictor:
 
         Returns:
             Binary predictions (1 = churn, 0 = no churn).
+
+        Raises:
+            ValidationError: If input fails DataContract validation.
         """
-        proba = self.predict_proba(X)
+        validated = self._contract.validate(X)
         thresh = threshold if threshold is not None else self.threshold
-        return (proba >= thresh).astype(int)
+        return self._infer_predict(validated.validated_data, threshold=thresh)
 
     def predict_batch(
         self, X: pd.DataFrame, threshold: float | None = None, return_proba: bool = True
@@ -207,14 +240,18 @@ class ChurnPredictor:
 
         Args:
             X: DataFrame with customer features.
-            threshold: Override decision threshold.
+            threshold: Override the default decision threshold.
             return_proba: Whether to include probabilities in output.
 
         Returns:
             Dictionary with predictions, probabilities (optional), and metadata.
+
+        Raises:
+            ValidationError: If input fails DataContract validation.
         """
-        proba = self.predict_proba(X)
+        validated = self._contract.validate_batch(X)
         thresh = threshold if threshold is not None else self.threshold
+        proba = self._infer_proba(validated.validated_data)
         pred = (proba >= thresh).astype(int)
 
         result = {
@@ -238,10 +275,13 @@ class ChurnPredictor:
 
         Returns:
             Dict with prediction details.
+
+        Raises:
+            ValidationError: If input fails DataContract validation.
         """
-        X = pd.DataFrame([customer_data])
-        proba = self.predict_proba(X)[0]
+        validated = self._contract.validate(customer_data)
         thresh = threshold if threshold is not None else self.threshold
+        proba = self._infer_proba(validated.validated_data)[0]
         pred = int(proba >= thresh)
 
         return {
@@ -287,8 +327,8 @@ def create_model_metadata(
         "random_state": 42,
         "threshold": {
             "value": threshold,
-            "selection_method": "OOF F1-optimal candidate",
-            "source_phase": "Phase 8B",
+            "selection_method": "Business cost optimization on OOF probabilities",
+            "source_phase": "Phase 11",
         },
         "training_rows": 3451,
         "test_rows": 2113,
@@ -354,7 +394,7 @@ def main():
     print("=" * 80)
     print(f"Pipeline saved to: {PIPELINE_PATH}")
     print(f"Metadata saved to: {METADATA_PATH}")
-    print(f"Default threshold: {DEFAULT_THRESHOLD} (OOF F1-optimal from Phase 8B)")
+    print(f"Default threshold: {DEFAULT_THRESHOLD} (business cost optimization from Phase 11)")
 
     return pipeline
 

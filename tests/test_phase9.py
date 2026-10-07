@@ -94,29 +94,39 @@ def test_build_final_pipeline_structure():
 def test_churn_predictor_initialization():
     """Test ChurnPredictor initialization with default and custom threshold."""
     pipeline = build_final_pipeline()
+    # Fit pipeline for DataContract to extract fitted encoder categories
+    train_df = load_data("train")
+    X_train = train_df.drop(columns=[TARGET_COL])
+    y_train = train_df[TARGET_COL].replace({"No": 0, "Yes": 1}).astype(int).values
+    pipeline.fit(X_train.iloc[:100], y_train[:100])
 
     # Test with default threshold
     predictor = ChurnPredictor(pipeline=pipeline)
-    assert predictor.threshold == 0.55
+    assert predictor.threshold == 0.28
     assert (
-        predictor.threshold_metadata["selection_method"] == "OOF F1-optimal candidate"
+        predictor.threshold_metadata["selection_method"] == "Business cost optimization on OOF probabilities"
     )
 
     # Test with custom threshold
-    predictor_custom = ChurnPredictor(threshold=0.60)
+    predictor_custom = ChurnPredictor(pipeline=pipeline, threshold=0.60)
     assert predictor_custom.threshold == 0.60
     assert predictor_custom.threshold_metadata["value"] == 0.60
 
     # Test threshold validation
     with pytest.raises(ValueError):
-        ChurnPredictor(threshold=1.5)
+        ChurnPredictor(pipeline=pipeline, threshold=1.5)
     with pytest.raises(ValueError):
-        ChurnPredictor(threshold=-0.1)
+        ChurnPredictor(pipeline=pipeline, threshold=-0.1)
 
 
 def test_predictor_threshold_update():
     """Test threshold can be updated after initialization."""
     pipeline = build_final_pipeline()
+    train_df = load_data("train")
+    X_train = train_df.drop(columns=[TARGET_COL])
+    y_train = train_df[TARGET_COL].replace({"No": 0, "Yes": 1}).astype(int).values
+    pipeline.fit(X_train.iloc[:100], y_train[:100])
+
     predictor = ChurnPredictor(pipeline=pipeline, threshold=0.50)
     assert predictor.threshold == 0.50
     predictor.threshold = 0.60
@@ -125,10 +135,10 @@ def test_predictor_threshold_update():
 
 
 def test_threshold_metadata():
-    """Test threshold metadata structure."""
-    assert THRESHOLD_METADATA["selection_method"] == "OOF F1-optimal candidate"
-    assert THRESHOLD_METADATA["source_phase"] == "Phase 8B"
-    assert THRESHOLD_METADATA["value"] == 0.55
+    """Test threshold metadata structure (Phase 11 business threshold)."""
+    assert THRESHOLD_METADATA["selection_method"] == "Business cost optimization on OOF probabilities"
+    assert THRESHOLD_METADATA["source_phase"] == "Phase 11"
+    assert THRESHOLD_METADATA["value"] == 0.28
 
 
 def test_pipeline_serialization():
@@ -188,8 +198,8 @@ def test_model_metadata_creation():
     assert metadata["model_parameters"]["class_weight"] == "balanced"
     assert metadata["random_state"] == 42
     assert metadata["threshold"]["value"] == 0.55
-    assert metadata["threshold"]["selection_method"] == "OOF F1-optimal candidate"
-    assert metadata["threshold"]["source_phase"] == "Phase 8B"
+    assert metadata["threshold"]["selection_method"] == "Business cost optimization on OOF probabilities"
+    assert metadata["threshold"]["source_phase"] == "Phase 11"
     assert metadata["feature_pipeline_included"] is True
     assert "preprocessing" in metadata
     assert "numeric_features" in metadata["preprocessing"]
@@ -220,7 +230,7 @@ def test_save_model_metadata():
 
         assert loaded["model_type"] == "RandomForestClassifier"
         assert loaded["threshold"]["value"] == 0.55
-        assert loaded["threshold"]["selection_method"] == "OOF F1-optimal candidate"
+        assert loaded["threshold"]["selection_method"] == "Business cost optimization on OOF probabilities"
     finally:
         temp_path.unlink()
 
@@ -238,7 +248,12 @@ def test_no_test_data_leakage():
 def test_churn_predictor_predict_proba():
     """Test that ChurnPredictor can generate probabilities."""
     pipeline = build_final_pipeline()
-    predictor = ChurnPredictor(pipeline=pipeline, threshold=0.55)
+    train_df = load_data("train")
+    X_train = train_df.drop(columns=[TARGET_COL])
+    y_train = train_df[TARGET_COL].replace({"No": 0, "Yes": 1}).astype(int).values
+    pipeline.fit(X_train.iloc[:100], y_train[:100])
+
+    predictor = ChurnPredictor(pipeline=pipeline, threshold=0.28)
 
     # Check methods exist
     assert hasattr(predictor, "predict_proba")

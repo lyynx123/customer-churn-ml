@@ -10,17 +10,17 @@ Telecommunications providers lose significant revenue when customers churn witho
 
 ## Machine Learning Objective
 
-**Task**: Binary classification  
-**Target**: `Churn` (Yes/No)  
-**Objective**: Predict the probability that a customer is classified as churned (`Churn=Yes`)  
+**Task**: Binary classification
+**Target**: `Churn` (Yes/No)
+**Objective**: Predict the probability that a customer is classified as churned (`Churn=Yes`)
 **Evaluation**: ROC-AUC (primary), PR-AUC, F1, Precision, Recall, Accuracy, FPR, FNR
 
 ## Dataset
 
-**Source**: Telco Customer Churn dataset (public, IBM/Kaggle)  
-**Original rows**: 7,043  
-**Features after cleaning**: 20 (after dropping `customerID`)  
-**Missing data**: `TotalCharges` had 11 missing values (coerced to NaN, imputed via median)  
+**Source**: Telco Customer Churn dataset (public, IBM/Kaggle)
+**Original rows**: 7,043
+**Features after cleaning**: 20 (after dropping `customerID`)
+**Missing data**: `TotalCharges` had 11 missing values (coerced to NaN, imputed via median)
 
 **Target distribution** (after cleaning):
 - No (stay): 5,174 (73.5%)
@@ -201,144 +201,202 @@ All stochastic components use `random_state=42`:
 
 ## How to Run
 
-```bash
-# 1. Install dependencies
-uv sync
+ ```bash
+ # 1. Install dependencies
+ uv sync
 
-# 2. Run tests
-uv run pytest
+ # 2. Run tests
+ uv run pytest
 
-# 3. Lint & type-check
-uv run ruff check .
-uv run mypy src
-uv run pyright
+ # 3. Lint & type-check
+ uv run ruff check .
+ uv run mypy src
+ uv run pyright
 
-# 4. Run full pipeline (optional — regenerates artifacts)
-uv run python -m customer_churn.split      # Creates train/val/test splits
-uv run python -m customer_churn.models     # Baseline CV comparison
-uv run python -m customer_churn.tune       # Phase 8A hyperparameter tuning
-uv run python -m customer_churn.threshold  # Phase 8B OOF threshold analysis
-uv run python -m customer_churn.final_evaluation  # Phase 8C final test eval
-```
+ # 4. Run full pipeline (optional — regenerates artifacts)
+ uv run python -m customer_churn.split      # Creates train/val/test splits
+ uv run python -m customer_churn.models     # Baseline CV comparison
+ uv run python -m customer_churn.tune       # Hyperparameter tuning
+ uv run python -m customer_churn.threshold  # Phase 8B OOF threshold analysis
+ uv run python -m customer_churn.final_evaluation  # Phase 8C final test eval
+ ```
 
-**Environment**: Python 3.12+, `uv` package manager
+ **Environment**: Python 3.12+, `uv` package manager
 
-## Inference
+ ## Inference
 
-The project provides a Python inference interface via `ChurnPredictor`:
+ The project provides a Python inference interface via `ChurnPredictor`:
 
-```python
-from customer_churn.predict import ChurnPredictor, load_pipeline
+ ```python
+ from customer_churn.predict import ChurnPredictor, load_pipeline
 
-# Load the trained pipeline
-pipeline = load_pipeline()
+ # Load the trained pipeline
+ pipeline = load_pipeline()
 
-# Create predictor with default threshold (0.55, OOF F1-optimal from Phase 8B)
-predictor = ChurnPredictor()
+ # Create predictor with default threshold (0.28, business cost optimization from Phase 11)
+ predictor = ChurnPredictor()
 
-# Single prediction
-customer = {
-    "gender": "Female",
-    "SeniorCitizen": 0,
-    "Partner": "Yes",
-    "Dependents": "No",
-    "tenure": 12,
-    "PhoneService": "Yes",
-    "MultipleLines": "No",
-    "InternetService": "DSL",
-    "OnlineSecurity": "No",
-    "OnlineBackup": "No",
-    "DeviceProtection": "No",
-    "TechSupport": "No",
-    "StreamingTV": "No",
-    "StreamingMovies": "No",
-    "Contract": "Month-to-month",
-    "PaperlessBilling": "Yes",
-    "PaymentMethod": "Electronic check",
-    "MonthlyCharges": 75.50,
-    "TotalCharges": 29.85,
-}
-result = predictor.predict_single(sample)
-# Returns: {'churn_probability': 0.77, 'threshold': 0.55,
-# 'prediction': 1, 'prediction_label': 'Yes', ...}
+ # Single prediction
+ customer = {
+     "gender": "Female",
+     "SeniorCitizen": 0,
+     "Partner": "Yes",
+     "Dependents": "No",
+     "tenure": 12,
+     "PhoneService": "Yes",
+     "MultipleLines": "No",
+     "InternetService": "DSL",
+     "OnlineSecurity": "No",
+     "OnlineBackup": "No",
+     "DeviceProtection": "No",
+     "TechSupport": "No",
+     "StreamingTV": "No",
+     "StreamingMovies": "No",
+     "Contract": "Month-to-month",
+     "PaperlessBilling": "Yes",
+     "PaymentMethod": "Electronic check",
+     "MonthlyCharges": 75.50,
+     "TotalCharges": 29.85,
+ }
+ result = predictor.predict_single(sample)
+ # Returns: {'churn_probability': 0.77, 'threshold': 0.28,
+ # 'prediction': 1, 'prediction_label': 'Yes', ...}
 
-# Batch prediction
-import pandas as pd
+ # Batch prediction
+ import pandas as pd
 
-test_df = pd.read_parquet("data/processed/test.parquet")
-X_test = test_df.drop(columns=["Churn"])
-result = predictor.predict_batch(X_test.iloc[:10])
-# Returns: {'predictions': [...], 'probabilities': [...], 'threshold': 0.55, ...}
+ test_df = pd.read_parquet("data/processed/test.parquet")
+ X_test = test_df.drop(columns=["Churn"])
+ result = predictor.predict_batch(X_test.iloc[:10])
+ # Returns: {'predictions': [...], 'probabilities': [...], 'threshold': 0.28, ...}
 
-# Custom threshold
-result = predictor.predict_single(sample, threshold=0.45)
-# Returns prediction with custom threshold
-```
+ # Custom threshold
+ result = predictor.predict_single(sample, threshold=0.45)
+ # Returns prediction with custom threshold
+ ```
 
-**Environment**: Python 3.12+, `uv` package manager
+ **Environment**: Python 3.12+, `uv` package manager
 
-## Business Cost Optimization (Phase 11)
+ ## Business Cost Optimization (Phase 11)
 
-**Why a new threshold?**  The F1‑optimal threshold (0.55, from Phase 8B) maximises the harmonic mean of precision and recall, but it does not consider the actual financial impact of false positives (unnecessary retention offers) versus false negatives (missed churners).  When a missed churn is substantially more costly than an unnecessary retention, the optimal operational threshold shifts.
+ **Why a new threshold?**  The F1‑optimal threshold (0.55, from Phase 8B) maximises the harmonic mean of precision and recall, but it does not consider the actual financial impact of false positives (unnecessary retention offers) versus false negatives (missed churners).  When a missed churn is substantially more costly than an unnecessary retention, the optimal operational threshold shifts.
 
-**Cost matrix (illustrative assumptions)**
-```text
-cost_tn = 0.0   # No cost for true negatives (correctly predicted non‑churn)
-cost_fp = 10.0  # Cost of an unnecessary retention intervention
-cost_fn = 100.0 # Cost of a lost customer (missed churn)
-cost_tp = 10.0  # Cost of retention intervention given to a correctly predicted churner
-```
-These values are **illustrative assumptions only**. Predicted churners (both FP and TP) receive a retention intervention, thus both incur the intervention cost. These assumptions must be validated or replaced with real financial and stakeholder inputs before production use.
+ **Cost matrix (illustrative assumptions)**
+ ```text
+ cost_tn = 0.0   # No cost for true negatives (correctly predicted non‑churn)
+ cost_fp = 10.0  # Cost of an unnecessary retention intervention
+ cost_fn = 100.0 # Cost of a lost customer (missed churn)
+ cost_tp = 10.0  # Cost of retention intervention given to a correctly predicted churner
+ ```
+ These values are **illustrative assumptions only**. Predicted churners (both FP and TP) receive a retention intervention, thus both incur the intervention cost. These assumptions must be validated or replaced with real financial and stakeholder inputs before production use.
 
-**Decision‑layer workflow**
-1. Generate Out-of-Fold (OOF) probability predictions using training data only.
-2. Build a deterministic threshold grid (0.01 to 0.99, step 0.01).
-3. Calculate the expected business cost for each threshold using the cost matrix.
-4. Select the threshold that **minimizes total expected cost** on OOF data.
-5. Evaluate the selected threshold **once** on the frozen held-out test set for final verification.
+ **Decision‑layer workflow**
+ 1. Generate Out-of-Fold (OOF) probability predictions using training data only.
+ 2. Build a deterministic threshold grid (0.01 to 0.99, step 0.01).
+ 3. Calculate the expected business cost for each threshold using the cost matrix.
+ 4. Select the threshold that **minimizes total expected cost** on OOF data.
+ 5. Evaluate the selected threshold **once** on the frozen held-out test set for final verification.
 
-The frozen test set is strictly reserved for evaluation and does **not** participate in threshold selection.
+ The frozen test set is strictly reserved for evaluation and does **not** participate in threshold selection.
 
-**Reproducible command**
-```bash
-uv run python -m customer_churn.business_threshold_optimizer
-```
-Running the optimization with the illustrative cost matrix (FN=100, FP=10, TP=10, TN=0) yields:
+ **Reproducible command**
+ ```bash
+ uv run python -m customer_churn.business_threshold_optimizer
+ ```
+ Running the optimization with the illustrative cost matrix (FN=100, FP=10, TP=10, TN=0) yields:
 
-- **OOF‑optimal business threshold:** `0.28`
-- **OOF Metrics (at 0.28):**
-  - `TN=1407, FP=1128, FN=69, TP=847`
-  - `Precision = 0.42886, Recall = 0.92467, F1 = 0.58596, Accuracy = 0.65314`
-  - `Total expected cost = $26,650`
-  - `Average cost per customer = $7.72`
+ - **OOF‑optimal business threshold:** `0.28`
+ - **OOF Metrics (at 0.28):**
+   - `TN=1407, FP=1128, FN=69, TP=847`
+   - `Precision = 0.42886, Recall = 0.92467, F1 = 0.58596, Accuracy = 0.65314`
+   - `Total expected cost = $26,650`
+   - `Average cost per customer = $7.72`
 
-- **Frozen‑test evaluation (at 0.28):**
-  - `TN=862, FP=690, FN=46, TP=515`
-  - `Precision = 0.4274, Recall = 0.9180, F1 = 0.5832, Accuracy = 0.6517`
-  - `Total cost = $16,650`
-  - `Average cost per customer = $7.88`
+ - **Frozen‑test evaluation (at 0.28):**
+   - `TN=862, FP=690, FN=46, TP=515`
+   - `Precision = 0.4274, Recall = 0.9180, F1 = 0.5832, Accuracy = 0.6517`
+   - `Total cost = $16,650`
+   - `Average cost per customer = $7.88`
 
-**Artifacts generated**
-- `models/business_cost_analysis.json` – machine‑readable summary of the optimisation and test evaluation.
-- `models/business_cost_thresholds.csv` – per‑threshold metrics and costs.
-- `notebooks/figures/business_cost_curve.png` – cost vs. threshold plot (minimum highlighted).
-- `models/cost_sensitivity_analysis.csv` – illustrative sensitivity scenarios showing how the optimal threshold moves as the FN/FP cost ratio changes.
+ **Artifacts generated**
+ - `models/business_cost_analysis.json` – machine‑readable summary of the optimisation and test evaluation.
+ - `models/business_cost_thresholds.csv` – per‑threshold metrics and costs.
+ - `notebooks/figures/business_cost_curve.png` – cost vs. threshold plot (minimum highlighted).
+ - `models/cost_sensitivity_analysis.csv` – illustrative sensitivity scenarios showing how the optimal threshold moves as the FN/FP cost ratio changes.
 
-**How to customise**
-Replace the `CostMatrix` values in `src/customer_churn/business_cost.py` or pass a custom `CostMatrix` instance to `run_phase11()` if you need different assumptions.
+ **How to customise**
+ Replace the `CostMatrix` values in `src/customer_churn/business_cost.py` or pass a custom `CostMatrix` instance to `run_phase11()` if you need different assumptions.
+
+ ---
+
+ ## Testing & Code Quality
+
+ ```bash
+ uv run pytest          # 106 tests pass
+ uv run ruff check .    # Linting clean
+ uv run mypy src tests  # Type checking clean
+ uv run pyright         # Type checking clean (main src)
+ ```
+
+ **Test coverage**: 106 tests covering data loading, preprocessing, pipeline structure, model configs, threshold optimization, metric correctness, OOF leakage checks, business cost logic, and Phase 14 Data Contract validation.
 
 ---
 
-## Testing & Code Quality
+## Data Contract (Phase 14)
 
-```bash
-uv run pytest          # 105 tests pass
-uv run ruff check .    # Linting clean
-uv run mypy src tests  # Type checking clean
-uv run pyright         # Type checking clean (main src)
+The **Data Contract** is a production input boundary that validates inference requests *before* they reach the model pipeline. It enforces a strict schema derived from the fitted production model.
+
+### Architecture
+
+```
+Raw Input
+   \u2193
+ChurnPredictor public API
+   \u2193
+DataContract.validate()
+   \u2193
+Validated DataFrame
+   \u2193
+Existing Production Pipeline
+   \u2193
+P(Churn=Yes)
+   \u2193
+Production Threshold = 0.28
+   \u2193
+Prediction
 ```
 
-**Test coverage**: 105 tests covering data loading, preprocessing, pipeline structure, model configs, threshold optimization, metric correctness, OOF leakage checks, and business cost logic.
+### Features
+
+The production model expects exactly **19 features**:
+
+| Type | Features |
+|------|----------|
+| **Numeric (4)** | `MonthlyCharges`, `SeniorCitizen`, `TotalCharges`, `tenure` |
+| **Categorical (15)** | `Contract`, `Dependents`, `DeviceProtection`, `InternetService`, `MultipleLines`, `OnlineBackup`, `OnlineSecurity`, `PaperlessBilling`, `Partner`, `PaymentMethod`, `PhoneService`, `StreamingMovies`, `StreamingTV`, `TechSupport`, `gender` |
+
+### Forbidden fields
+
+`customerID` (identifier) and `Churn` (target) are rejected at the contract boundary.
+
+### Validation rules
+
+- **Required columns**: All 19 production features must be present
+- **Forbidden columns**: `customerID`, `Churn` are rejected
+- **Unexpected columns**: Rejected (strict mode)
+- **Missing values**: NaN/empty rejected at the boundary \u2014 no downstream imputation
+- **Numeric constraints**: `SeniorCitizen \u2208 {0,1}`; `tenure \u2265 0`; `MonthlyCharges \u2265 0`; `TotalCharges \u2265 0`; no NaN or infinity
+- **Categorical validation**: Values must match the fitted `OneHotEncoder.categories_` \u2014 unknown categories are rejected by default
+- **Schema source**: Categorical domains are derived from the fitted production pipeline's `OneHotEncoder`, not hardcoded
+- **Pipeline instance**: The DataContract uses the *exact same* fitted pipeline instance as `ChurnPredictor` \u2014 no second model is loaded
+
+### Production threshold: `0.28`
+
+The production decision threshold is **0.28**, selected in Phase 11 via business cost optimization (OOF probabilities). This is the default for `ChurnPredictor`.
+
+Phase 12 probability calibration was evaluated but **not adopted** \u2014 the frozen-test business cost at 0.28 is `$16,650` (TN=862, FP=690, FN=46, TP=515).
+
+---
 
 ## SHAP Explainability (Phase 13)
 

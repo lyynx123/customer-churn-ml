@@ -22,6 +22,7 @@ dev = [
     "seaborn>=0.12",
     "jupyter>=1.0",
     "ipykernel>=6.27",
+    "shap>=0.44",
 ]
 
 [build-system]

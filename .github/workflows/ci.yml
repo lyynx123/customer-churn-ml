@@ -31,6 +31,27 @@ jobs:
         run: |
           uv sync --frozen --all-extras
 
+      # Build inference artifacts in CI (deterministic, reproduces exact SHA256)
+      - name: Build inference artifacts
+        run: |
+          uv run python -m customer_churn.data
+          uv run python -m customer_churn.split
+          uv run python -m customer_churn.predict
+          uv run python scripts/extract_inference_artifacts.py
+
+      # Verify artifact integrity and production config
+      - name: Verify inference artifacts
+        run: |
+          uv run python scripts/verify_inference_artifacts.py --artifacts-dir models
+
+      # CLI smoke test with real artifacts
+      - name: CLI smoke test
+        run: |
+          uv run python -m customer_churn.portable_predict \
+            --input tests/fixtures/portable_smoke_input.csv \
+            --artifacts models \
+            --output /tmp/smoke_predictions.csv
+
       - name: Run tests
         run: uv run pytest -q
 
@@ -45,3 +66,6 @@ jobs:
 
       - name: Type check (pyright)
         run: uv run pyright src
+
+      - name: Package build
+        run: uv build

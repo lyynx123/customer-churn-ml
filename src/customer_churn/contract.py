@@ -22,8 +22,6 @@ import numpy as np
 import pandas as pd
 from sklearn.pipeline import Pipeline
 
-from .features import NUMERIC_COLS, TARGET_COL, _get_categorical_columns
-
 # Production threshold from Phase 11 business cost optimization
 PRODUCTION_THRESHOLD = 0.28
 
@@ -84,6 +82,9 @@ class DataContract:
         """
         if not isinstance(pipeline, Pipeline):
             raise TypeError("pipeline must be a sklearn Pipeline instance")
+
+        # Lazy import to avoid loading features/config at package import time
+        from .features import NUMERIC_COLS, TARGET_COL, _get_categorical_columns
 
         self._pipeline = pipeline
         self._allow_unknown = allow_unknown_categories
@@ -325,6 +326,9 @@ def _extract_categorical_allowed_from_pipeline(pipeline: Pipeline) -> dict[str, 
 
     This is a standalone utility for testing and external schema extraction.
     """
+    # Lazy import to avoid loading features/config at package import time
+    from .features import _get_categorical_columns
+
     preprocessor = pipeline.named_steps["preprocessor"]
     cat_encoder = preprocessor.named_transformers_["cat"].named_steps["encoder"]
     return {
@@ -342,6 +346,9 @@ def derive_schema_from_pipeline(pipeline: Pipeline) -> dict[str, Any]:
     - forbidden fields
     - feature ordering
     """
+    # Lazy import to avoid loading features/config at package import time
+    from .features import NUMERIC_COLS, _get_categorical_columns
+
     preprocessor = pipeline.named_steps["preprocessor"]
     cat_encoder = preprocessor.named_transformers_["cat"].named_steps["encoder"]
 

@@ -1,12 +1,26 @@
 from pathlib import Path
+from urllib.request import urlretrieve
 
 import pandas as pd
 
 from .config import PROCESSED_DATA_PATH, RAW_DATA_PATH
 
+TELCO_RAW_URL = "https://raw.githubusercontent.com/IBM/telco-customer-churn-on-icp4d/master/data/Telco-Customer-Churn.csv"
+
+
+def _ensure_raw_data() -> None:
+    """Download raw CSV if it doesn't exist."""
+    if RAW_DATA_PATH.exists():
+        return
+    RAW_DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
+    print(f"Downloading raw data from {TELCO_RAW_URL} ...")
+    urlretrieve(TELCO_RAW_URL, RAW_DATA_PATH)
+    print(f"Saved to {RAW_DATA_PATH}")
+
 
 def load_raw() -> pd.DataFrame:
     """Load raw CSV into DataFrame."""
+    _ensure_raw_data()
     df = pd.read_csv(RAW_DATA_PATH)
     return df
 
@@ -69,3 +83,8 @@ def run_pipeline() -> Path:
     """
     raw = load_raw()
     return preprocess_and_save(raw)
+
+
+if __name__ == "__main__":
+    path = run_pipeline()
+    print(f"Processed data saved to: {path}")

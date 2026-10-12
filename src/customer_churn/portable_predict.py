@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -26,6 +28,12 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.pipeline import Pipeline
+
+from .observability import (
+    MetricsCollector,
+    _categorize_error,
+    create_collector_from_metadata,
+)
 
 # =============================================================================
 # Portable Data Contract - Schema-driven validation (NO features.py dependency)
@@ -327,6 +335,7 @@ class PortableChurnPredictor:
         pipeline: Pipeline,
         contract: PortableDataContract,
         metadata: InferenceMetadata,
+        metrics_collector: MetricsCollector | None = None,
     ):
         """Initialize with pre-loaded components.
 
@@ -334,11 +343,13 @@ class PortableChurnPredictor:
             pipeline: Fitted sklearn Pipeline (preprocessor + model)
             contract: PortableDataContract with pre-extracted schema
             metadata: InferenceMetadata with threshold and integrity info
+            metrics_collector: Optional MetricsCollector for observability.
         """
         self.pipeline = pipeline
         self._contract = contract
         self._metadata = metadata
         self._threshold = metadata.production_threshold
+        self._metrics_collector = metrics_collector
 
     @classmethod
     def from_artifacts(
@@ -347,6 +358,7 @@ class PortableChurnPredictor:
         *,
         allow_unknown_categories: bool = False,
         verify_integrity: bool = True,
+        metrics_collector: MetricsCollector | None = None,
     ) -> PortableChurnPredictor:
         """Create predictor by loading all artifacts from a directory.
 
@@ -359,6 +371,9 @@ class PortableChurnPredictor:
                 - inference_metadata.json
             allow_unknown_categories: Pass through to PortableDataContract.
             verify_integrity: If True, verify SHA256 of pipeline matches metadata.
+            metrics_collector: Optional MetricsCollector for observability.
+                If not provided but metadata is available, one will be created
+                from the metadata's artifact hash and threshold.
 
         Returns:
             PortableChurnPredictor ready for inference.
@@ -403,7 +418,16 @@ class PortableChurnPredictor:
             allow_unknown_categories=allow_unknown_categories,
         )
 
-        return cls(pipeline=pipeline, contract=contract, metadata=metadata)
+        # Create metrics collector if not provided
+        if metrics_collector is None:
+            metrics_collector = create_collector_from_metadata(metadata)
+
+        return cls(
+            pipeline=pipeline,
+            contract=contract,
+            metadata=metadata,
+            metrics_collector=metrics_collector,
+        )
 
     @property
     def threshold(self) -> float:
@@ -412,6 +436,10 @@ class PortableChurnPredictor:
     @property
     def threshold_metadata(self) -> dict:
         return self._metadata.threshold_metadata.copy()
+
+    @property
+    def metrics_collector(self) -> MetricsCollector | None:
+        return self._metrics_collector
 
     def _infer_proba(self, X_validated: pd.DataFrame) -> np.ndarray:
         """Private inference on already-validated data."""
@@ -435,8 +463,37 @@ class PortableChurnPredictor:
         Raises:
             PortableValidationError: If input fails validation.
         """
-        validated = self._contract.validate(X)
-        return self._infer_proba(validated.validated_data)
+        start_time = time.perf_counter()
+        try:
+            validated = self._contract.validate(X)
+            proba = self._infer_proba(validated.validated_data)
+            if self._metrics_collector is not None:
+                latency_ms = (time.perf_counter() - start_time) * 1000
+                # predict_proba returns probabilities only (no binary labels),
+                # so positive/negative counts are not applicable here.
+                n = len(X) if hasattr(X, '__len__') else 1
+                self._metrics_collector.record_success(
+                    event_type="predict_proba",
+                    prediction_count=n,
+                    positive_predictions=0,
+                    negative_predictions=0,
+                    latency_ms=latency_ms,
+                    threshold=self._threshold,
+                    batch_size=n,
+                )
+            return proba
+        except Exception:
+            if self._metrics_collector is not None:
+                latency_ms = (time.perf_counter() - start_time) * 1000
+                error_category = _categorize_error(sys.exc_info()[1] or Exception("unknown error"))  # type: ignore[arg-type]
+                self._metrics_collector.record_failure(
+                    event_type="predict_proba",
+                    error_category=error_category,
+                    threshold=self._threshold,
+                    latency_ms=latency_ms,
+                    batch_size=len(X) if hasattr(X, '__len__') else 1,
+                )
+            raise
 
     def predict(self, X: pd.DataFrame, threshold: float | None = None) -> np.ndarray:
         """Predict churn class labels.
@@ -451,9 +508,38 @@ class PortableChurnPredictor:
         Raises:
             PortableValidationError: If input fails validation.
         """
-        validated = self._contract.validate(X)
+        start_time = time.perf_counter()
         thresh = threshold if threshold is not None else self.threshold
-        return self._infer_predict(validated.validated_data, threshold=thresh)
+        try:
+            validated = self._contract.validate(X)
+            pred = self._infer_predict(validated.validated_data, threshold=thresh)
+            if self._metrics_collector is not None:
+                latency_ms = (time.perf_counter() - start_time) * 1000
+                n = len(X) if hasattr(X, '__len__') else 1
+                positive = int(pred.sum()) if hasattr(pred, 'sum') else int(pred)
+                negative = n - positive
+                self._metrics_collector.record_success(
+                    event_type="predict",
+                    prediction_count=n,
+                    positive_predictions=positive,
+                    negative_predictions=negative,
+                    latency_ms=latency_ms,
+                    threshold=thresh,
+                    batch_size=n,
+                )
+            return pred
+        except Exception:
+            if self._metrics_collector is not None:
+                latency_ms = (time.perf_counter() - start_time) * 1000
+                error_category = _categorize_error(sys.exc_info()[1] or Exception("unknown error"))  # type: ignore[arg-type]
+                self._metrics_collector.record_failure(
+                    event_type="predict",
+                    error_category=error_category,
+                    threshold=thresh,
+                    latency_ms=latency_ms,
+                    batch_size=len(X) if hasattr(X, '__len__') else 1,
+                )
+            raise
 
     def predict_batch(
         self,
@@ -474,20 +560,49 @@ class PortableChurnPredictor:
         Raises:
             PortableValidationError: If input fails validation.
         """
-        validated = self._contract.validate_batch(X)
+        start_time = time.perf_counter()
         thresh = threshold if threshold is not None else self.threshold
-        proba = self._infer_proba(validated.validated_data)
-        pred = (proba >= thresh).astype(int)
+        try:
+            validated = self._contract.validate_batch(X)
+            proba = self._infer_proba(validated.validated_data)
+            pred = (proba >= thresh).astype(int)
 
-        result = {
-            "predictions": pred.tolist(),
-            "threshold": thresh,
-            "threshold_metadata": self.threshold_metadata,
-        }
-        if return_proba:
-            result["probabilities"] = proba.tolist()
+            result = {
+                "predictions": pred.tolist(),
+                "threshold": thresh,
+                "threshold_metadata": self.threshold_metadata,
+            }
+            if return_proba:
+                result["probabilities"] = proba.tolist()
 
-        return result
+            if self._metrics_collector is not None:
+                latency_ms = (time.perf_counter() - start_time) * 1000
+                n = len(X) if hasattr(X, '__len__') else 1
+                positive = int(pred.sum()) if hasattr(pred, 'sum') else int(pred)
+                negative = n - positive
+                self._metrics_collector.record_success(
+                    event_type="predict_batch",
+                    prediction_count=n,
+                    positive_predictions=positive,
+                    negative_predictions=negative,
+                    latency_ms=latency_ms,
+                    threshold=thresh,
+                    batch_size=n,
+                )
+
+            return result
+        except Exception:
+            if self._metrics_collector is not None:
+                latency_ms = (time.perf_counter() - start_time) * 1000
+                error_category = _categorize_error(sys.exc_info()[1] or Exception("unknown error"))  # type: ignore[arg-type]
+                self._metrics_collector.record_failure(
+                    event_type="predict_batch",
+                    error_category=error_category,
+                    threshold=thresh,
+                    latency_ms=latency_ms,
+                    batch_size=len(X) if hasattr(X, '__len__') else 1,
+                )
+            raise
 
     def predict_single(
         self,
@@ -506,18 +621,48 @@ class PortableChurnPredictor:
         Raises:
             PortableValidationError: If input fails validation.
         """
-        validated = self._contract.validate(customer_data)
+        start_time = time.perf_counter()
         thresh = threshold if threshold is not None else self.threshold
-        proba = self._infer_proba(validated.validated_data)[0]
-        pred = int(proba >= thresh)
+        try:
+            validated = self._contract.validate(customer_data)
+            proba = self._infer_proba(validated.validated_data)[0]
+            pred = int(proba >= thresh)
 
-        return {
-            "churn_probability": float(proba),
-            "threshold": thresh,
-            "prediction": pred,
-            "prediction_label": "Yes" if pred == 1 else "No",
-            "threshold_metadata": self.threshold_metadata,
-        }
+            result = {
+                "churn_probability": float(proba),
+                "threshold": thresh,
+                "prediction": pred,
+                "prediction_label": "Yes" if pred == 1 else "No",
+                "threshold_metadata": self.threshold_metadata,
+            }
+
+            if self._metrics_collector is not None:
+                latency_ms = (time.perf_counter() - start_time) * 1000
+                positive = 1 if pred == 1 else 0
+                negative = 1 if pred == 0 else 0
+                self._metrics_collector.record_success(
+                    event_type="predict_single",
+                    prediction_count=1,
+                    positive_predictions=positive,
+                    negative_predictions=negative,
+                    latency_ms=latency_ms,
+                    threshold=thresh,
+                    batch_size=1,
+                )
+
+            return result
+        except Exception:
+            if self._metrics_collector is not None:
+                latency_ms = (time.perf_counter() - start_time) * 1000
+                error_category = _categorize_error(sys.exc_info()[1] or Exception("unknown error"))  # type: ignore[arg-type]
+                self._metrics_collector.record_failure(
+                    event_type="predict_single",
+                    error_category=error_category,
+                    threshold=thresh,
+                    latency_ms=latency_ms,
+                    batch_size=1,
+                )
+            raise
 
 
 def compute_sha256(filepath: Path) -> str:

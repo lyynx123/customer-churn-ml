@@ -260,9 +260,7 @@ def get_oof_raw_probabilities(
     X_train, y_train = load_train_xy()
 
     pipeline = build_final_pipeline()  # UNFITTED Phase 8C-spec
-    cv = StratifiedKFold(
-        n_splits=n_splits, shuffle=True, random_state=RANDOM_SEED
-    )
+    cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=RANDOM_SEED)
 
     from sklearn.model_selection import cross_val_predict
 
@@ -291,7 +289,9 @@ class CalibrationMetrics:
 
     @property
     def mean_log_loss(self) -> float:
-        return float(np.mean(self.log_loss_folds)) if self.log_loss_folds else float("nan")
+        return (
+            float(np.mean(self.log_loss_folds)) if self.log_loss_folds else float("nan")
+        )
 
     @property
     def mean_brier(self) -> float:
@@ -299,7 +299,9 @@ class CalibrationMetrics:
 
     @property
     def mean_roc_auc(self) -> float:
-        return float(np.mean(self.roc_auc_folds)) if self.roc_auc_folds else float("nan")
+        return (
+            float(np.mean(self.roc_auc_folds)) if self.roc_auc_folds else float("nan")
+        )
 
     @property
     def mean_pr_auc(self) -> float:
@@ -344,15 +346,9 @@ def _calibrate_cross_fitted(
         p_cal = calibrator.predict_proba(raw_proba_oof[val_idx])
         calibrated_oof[val_idx] = p_cal
 
-        metrics.log_loss_folds.append(
-            float(log_loss(y_true[val_idx], p_cal))
-        )
-        metrics.brier_folds.append(
-            float(brier_score_loss(y_true[val_idx], p_cal))
-        )
-        metrics.roc_auc_folds.append(
-            float(roc_auc_score(y_true[val_idx], p_cal))
-        )
+        metrics.log_loss_folds.append(float(log_loss(y_true[val_idx], p_cal)))
+        metrics.brier_folds.append(float(brier_score_loss(y_true[val_idx], p_cal)))
+        metrics.roc_auc_folds.append(float(roc_auc_score(y_true[val_idx], p_cal)))
         metrics.pr_auc_folds.append(
             float(average_precision_score(y_true[val_idx], p_cal))
         )
@@ -515,7 +511,9 @@ def build_final_calibrator(
         IsotonicProbabilityCalibrator).
     """
     if selected_method == "sigmoid":
-        calibrator: SigmoidProbabilityCalibrator | IsotonicProbabilityCalibrator = build_sigmoid_calibrator()
+        calibrator: SigmoidProbabilityCalibrator | IsotonicProbabilityCalibrator = (
+            build_sigmoid_calibrator()
+        )
     elif selected_method == "isotonic":
         calibrator = build_isotonic_calibrator()
     else:
@@ -578,6 +576,43 @@ def save_calibration_analysis(results: dict[str, Any], output_path: Path) -> Non
         json.dump(results, handle, indent=2)
 
 
+def save_calibrated_model_metadata(results: dict[str, Any], output_path: Path) -> None:
+    """Persist calibrated model metadata as JSON.
+
+    This artifact documents the Phase 12 calibrated model experiment
+    (rejected; production uses uncalibrated RF at 0.28 threshold).
+    """
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Build the calibrated model on all OOF data for metadata
+    y_true, raw_proba_oof = get_oof_raw_probabilities()
+    selected_method = results["selected_method"]
+    from .calibration import build_final_calibrator
+
+    calibrator = build_final_calibrator(selected_method, y_true, raw_proba_oof)
+
+    metadata = {
+        "selected_method": selected_method,
+        "calibrator_type": type(calibrator).__name__,
+        "calibrator_params": {
+            "clip_eps": getattr(calibrator, "clip_eps", None),
+        },
+        "fitted_on": "OOF raw probabilities (5-fold StratifiedKFold, training data only)",
+        "frozen_test_used": False,
+        "production_model": "RandomForestClassifier (uncalibrated, Phase 8C spec)",
+        "production_threshold": 0.28,
+        "production_threshold_source": "Phase 11 business cost optimization",
+        "status": "rejected_experiment",
+        "note": "Phase 12 calibrated model evaluated but NOT adopted for production inference. "
+        "Production uses uncalibrated RF with 0.28 threshold from Phase 11.",
+        "selection_rationale": results["selection_rationale"],
+        "metrics_comparison": results["metrics_comparison"],
+    }
+
+    with open(output_path, "w") as handle:
+        json.dump(metadata, handle, indent=2)
+
+
 def main() -> None:
     """Run calibration analysis and save artifacts."""
     results = run_calibration_analysis()
@@ -589,13 +624,20 @@ def main() -> None:
     print(f"Rationale: {results['selection_rationale']}")
     print("\nMetrics comparison (cross-fitted, training data only):")
     for method, metrics in results["metrics_comparison"].items():
-        print(f"  {method}: log_loss={metrics['log_loss']:.6f}, "
-              f"brier={metrics['brier_score']:.6f}, "
-              f"roc_auc={metrics['roc_auc']:.6f}, "
-              f"pr_auc={metrics['pr_auc']:.6f}")
+        print(
+            f"  {method}: log_loss={metrics['log_loss']:.6f}, "
+            f"brier={metrics['brier_score']:.6f}, "
+            f"roc_auc={metrics['roc_auc']:.6f}, "
+            f"pr_auc={metrics['pr_auc']:.6f}"
+        )
 
     save_calibration_analysis(results, CALIBRATION_ANALYSIS_PATH)
     print(f"\nSaved to {CALIBRATION_ANALYSIS_PATH}")
+
+    # Save calibrated model metadata (rejected experiment artifact)
+    CALIBRATED_MODEL_METADATA_PATH = MODELS_DIR / "calibrated_model_metadata.json"
+    save_calibrated_model_metadata(results, CALIBRATED_MODEL_METADATA_PATH)
+    print(f"Saved calibrated model metadata to {CALIBRATED_MODEL_METADATA_PATH}")
 
 
 if __name__ == "__main__":

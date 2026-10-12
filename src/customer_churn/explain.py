@@ -76,7 +76,9 @@ class ShapExplanationResult:
     base_value: float  # expected_value for class 1 (E[P(churn=Yes)])
     feature_names: list[str]
     predictions: NDArray[np.float64]  # predicted probabilities for class 1
-    model_output: str = "probability"  # output space: probability (raw output from tree_path_dependent)
+    model_output: str = (
+        "probability"  # output space: probability (raw output from tree_path_dependent)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -715,7 +717,9 @@ def save_figures(
         plt.savefig(summary_path, dpi=150, bbox_inches="tight")
         plt.close()
         artifacts["summary"] = summary_path
-    except Exception as exc:  # pragma: no cover - plot failure not fatal  # noqa: BLE001
+    except (
+        Exception  # noqa: BLE001
+    ) as exc:  # pragma: no cover - plot failure not fatal
         plt.close()
         print(f"Summary plot failed: {exc}")
 
@@ -743,8 +747,8 @@ def save_figures(
     for sample_type, loc in local_explanations.items():
         try:
             row_idx = loc.index
-            sv_row = sv_class1[row_idx: row_idx + 1]
-            feat_row = X_full[row_idx: row_idx + 1]
+            sv_row = sv_class1[row_idx : row_idx + 1]
+            feat_row = X_full[row_idx : row_idx + 1]
 
             _, ax = plt.subplots(figsize=(10, 8))
             shap.plots._waterfall.waterfall_legacy(
@@ -841,13 +845,17 @@ def run_explainability_analysis(
     # 6. Feature importance tables
     print("\n[6] Computing feature importance...")
     sv_class1 = global_result.shap_values[:, :, 1]
-    global_importance = pd.DataFrame(
-        {
-            "feature": feature_names,
-            "mean_abs_shap": np.mean(np.abs(sv_class1), axis=0),
-            "mean_signed_shap": np.mean(sv_class1, axis=0),
-        }
-    ).sort_values("mean_abs_shap", ascending=False).reset_index(drop=True)
+    global_importance = (
+        pd.DataFrame(
+            {
+                "feature": feature_names,
+                "mean_abs_shap": np.mean(np.abs(sv_class1), axis=0),
+                "mean_signed_shap": np.mean(sv_class1, axis=0),
+            }
+        )
+        .sort_values("mean_abs_shap", ascending=False)
+        .reset_index(drop=True)
+    )
 
     grouped_importance = group_shap_by_original_feature(
         global_result.shap_values, feature_names, class_index=1
@@ -862,7 +870,13 @@ def run_explainability_analysis(
 
     print("\n[8] Computing local SHAP explanations...")
     local_explanations = compute_local_shap(
-        explainer, X_explain, indices, y_true, model, feature_names, PRODUCTION_THRESHOLD
+        explainer,
+        X_explain,
+        indices,
+        y_true,
+        model,
+        feature_names,
+        PRODUCTION_THRESHOLD,
     )
 
     # 9. Save artifacts
@@ -875,14 +889,21 @@ def run_explainability_analysis(
     )
     local_artifacts = save_local_artifacts(local_explanations, out_dir)
     figures = save_figures(
-        global_result, global_importance, local_explanations, X_global, X_explain, fig_dir
+        global_result,
+        global_importance,
+        local_explanations,
+        X_global,
+        X_explain,
+        fig_dir,
     )
 
     # Print summary
     print("\n" + "=" * 80)
     print("PHASE 13 RESULTS")
     print("=" * 80)
-    print("\nOutput space: probability (positive-class output from tree_path_dependent SHAP)")
+    print(
+        "\nOutput space: probability (positive-class output from tree_path_dependent SHAP)"
+    )
     print(f"Expected value (class 1): {global_result.base_value:.6f}")
     print(f"Business threshold: {PRODUCTION_THRESHOLD}")
     print("\nTop 10 features (transformed):")
@@ -891,7 +912,7 @@ def run_explainability_analysis(
     print("\nTop 10 features (original, grouped):")
     for _, row in grouped_importance.head(10).iterrows():
         print(
-            f"  {row['original_feature']}: mean_abs={row['mean_abs_shap']:.6f}, "
+            f"  {row['original_feature']}: mean_abs={row['mean_abs']:.6f}, "
             f"mean_signed={row['mean_signed']:.6f}"
         )
 

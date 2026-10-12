@@ -36,6 +36,15 @@ jobs:
           uv run python -m customer_churn.data
           uv run python -m customer_churn.split
           uv run python -m customer_churn.predict
+
+      # Generate Phase 11 business cost artifacts (required for inference metadata)
+      - name: Generate Phase 11 business cost artifacts
+        run: |
+          uv run python -m customer_churn.business_threshold_optimizer
+
+      # Extract portable inference artifacts (requires business_cost_analysis.json)
+      - name: Extract inference artifacts
+        run: |
           uv run python scripts/extract_inference_artifacts.py
 
       # Verify artifact integrity and production config
@@ -50,6 +59,16 @@ jobs:
             --input tests/fixtures/portable_smoke_input.csv \
             --artifacts models \
             --output /tmp/smoke_predictions.csv
+
+      # Generate Phase 12 calibration artifacts (for test_phase12_artifacts_unchanged)
+      - name: Generate Phase 12 calibration artifacts
+        run: |
+          uv run python -m customer_churn.calibration
+
+      # Generate Phase 13 SHAP explainability artifacts (for test_phase13_artifacts_unchanged)
+      - name: Generate Phase 13 SHAP explainability artifacts
+        run: |
+          uv run python -m customer_churn.explain
 
       - name: Run tests
         run: uv run pytest -q

@@ -323,7 +323,9 @@ class TestCalibratedRFClassifier:
         # Load small training subset for quick test
         train_df = load_data("train")
         X_train = train_df.drop(columns=["Churn"]).iloc[:50]
-        y_train = train_df["Churn"].replace({"No": 0, "Yes": 1}).astype(int).iloc[:50].values
+        y_train = (
+            train_df["Churn"].replace({"No": 0, "Yes": 1}).astype(int).iloc[:50].values
+        )
 
         preprocessor = build_preprocessor()
         X_trans = preprocessor.fit_transform(X_train)
@@ -333,6 +335,7 @@ class TestCalibratedRFClassifier:
 
         # Build calibrator on synthetic data
         from customer_churn.calibration import SigmoidProbabilityCalibrator
+
         cal = SigmoidProbabilityCalibrator()
         cal.fit(np.array([0.1, 0.9]), np.array([0, 1]))
 
@@ -354,7 +357,9 @@ class TestCalibratedRFClassifier:
 
         train_df = load_data("train")
         X_train = train_df.drop(columns=["Churn"]).iloc[:30]
-        y_train = train_df["Churn"].replace({"No": 0, "Yes": 1}).astype(int).iloc[:30].values
+        y_train = (
+            train_df["Churn"].replace({"No": 0, "Yes": 1}).astype(int).iloc[:30].values
+        )
 
         preprocessor = build_preprocessor()
         X_trans = preprocessor.fit_transform(X_train)
@@ -362,6 +367,7 @@ class TestCalibratedRFClassifier:
         rf.fit(X_trans, y_train)
 
         from customer_churn.calibration import SigmoidProbabilityCalibrator
+
         cal = SigmoidProbabilityCalibrator()
         cal.fit(np.array([0.1, 0.9]), np.array([0, 1]))
 
@@ -380,7 +386,9 @@ class TestCalibratedRFClassifier:
 
         train_df = load_data("train")
         X_train = train_df.drop(columns=["Churn"]).iloc[:30]
-        y_train = train_df["Churn"].replace({"No": 0, "Yes": 1}).astype(int).iloc[:30].values
+        y_train = (
+            train_df["Churn"].replace({"No": 0, "Yes": 1}).astype(int).iloc[:30].values
+        )
 
         preprocessor = build_preprocessor()
         X_trans = preprocessor.fit_transform(X_train)
@@ -388,6 +396,7 @@ class TestCalibratedRFClassifier:
         rf.fit(X_trans, y_train)
 
         from customer_churn.calibration import SigmoidProbabilityCalibrator
+
         cal = SigmoidProbabilityCalibrator()
         cal.fit(np.array([0.1, 0.9]), np.array([0, 1]))
 
@@ -411,7 +420,9 @@ class TestCalibratedRFClassifier:
 
         train_df = load_data("train")
         X_train = train_df.drop(columns=["Churn"]).iloc[:30]
-        y_train = train_df["Churn"].replace({"No": 0, "Yes": 1}).astype(int).iloc[:30].values
+        y_train = (
+            train_df["Churn"].replace({"No": 0, "Yes": 1}).astype(int).iloc[:30].values
+        )
 
         preprocessor = build_preprocessor()
         X_trans = preprocessor.fit_transform(X_train)
@@ -419,6 +430,7 @@ class TestCalibratedRFClassifier:
         rf.fit(X_trans, y_train)
 
         from customer_churn.calibration import SigmoidProbabilityCalibrator
+
         cal = SigmoidProbabilityCalibrator()
         cal.fit(np.array([0.1, 0.9]), np.array([0, 1]))
 
@@ -450,7 +462,9 @@ class TestCalibratedRFClassifier:
 
         train_df = load_data("train")
         X_train = train_df.drop(columns=["Churn"]).iloc[:30]
-        y_train = train_df["Churn"].replace({"No": 0, "Yes": 1}).astype(int).iloc[:30].values
+        y_train = (
+            train_df["Churn"].replace({"No": 0, "Yes": 1}).astype(int).iloc[:30].values
+        )
 
         preprocessor = build_preprocessor()
         X_trans = preprocessor.fit_transform(X_train)
@@ -458,6 +472,7 @@ class TestCalibratedRFClassifier:
         rf.fit(X_trans, y_train)
 
         from customer_churn.calibration import SigmoidProbabilityCalibrator
+
         cal = SigmoidProbabilityCalibrator()
         cal.fit(np.array([0.1, 0.9]), np.array([0, 1]))
 
@@ -537,6 +552,7 @@ class TestCalibratedBusinessThreshold:
 
         # Build and fit selected calibrator on ALL OOF data
         from customer_churn.calibration import build_final_calibrator
+
         calibrator = build_final_calibrator(selected_method, y_true, raw_proba_oof)
 
         # Get calibrated OOF probabilities
@@ -558,6 +574,7 @@ class TestCalibratedBusinessThreshold:
         y_true, raw_proba_oof = get_oof_raw_probabilities()
 
         from customer_churn.calibration import build_final_calibrator
+
         calibrator = build_final_calibrator(selected_method, y_true, raw_proba_oof)
         calibrated_oof = calibrator.predict_proba(raw_proba_oof)
 

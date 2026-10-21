@@ -271,9 +271,10 @@ def get_oof_raw_probabilities(
         cv=cv,
         method="predict_proba",
         n_jobs=-1,
-    )[:, 1]
+    )
+    y_proba_positive_class = np.asarray(y_proba_oof[:, 1], dtype=float)  # type: ignore[call-overload, index]
 
-    return y_train, np.asarray(y_proba_oof, dtype=float)
+    return y_train, y_proba_positive_class
 
 
 @dataclass

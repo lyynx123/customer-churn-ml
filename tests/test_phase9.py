@@ -104,7 +104,8 @@ def test_churn_predictor_initialization():
     predictor = ChurnPredictor(pipeline=pipeline)
     assert predictor.threshold == 0.28
     assert (
-        predictor.threshold_metadata["selection_method"] == "Business cost optimization on OOF probabilities"
+        predictor.threshold_metadata["selection_method"]
+        == "Business cost optimization on OOF probabilities"
     )
 
     # Test with custom threshold
@@ -136,7 +137,10 @@ def test_predictor_threshold_update():
 
 def test_threshold_metadata():
     """Test threshold metadata structure (Phase 11 business threshold)."""
-    assert THRESHOLD_METADATA["selection_method"] == "Business cost optimization on OOF probabilities"
+    assert (
+        THRESHOLD_METADATA["selection_method"]
+        == "Business cost optimization on OOF probabilities"
+    )
     assert THRESHOLD_METADATA["source_phase"] == "Phase 11"
     assert THRESHOLD_METADATA["value"] == 0.28
 
@@ -198,7 +202,10 @@ def test_model_metadata_creation():
     assert metadata["model_parameters"]["class_weight"] == "balanced"
     assert metadata["random_state"] == 42
     assert metadata["threshold"]["value"] == 0.55
-    assert metadata["threshold"]["selection_method"] == "Business cost optimization on OOF probabilities"
+    assert (
+        metadata["threshold"]["selection_method"]
+        == "Business cost optimization on OOF probabilities"
+    )
     assert metadata["threshold"]["source_phase"] == "Phase 11"
     assert metadata["feature_pipeline_included"] is True
     assert "preprocessing" in metadata
@@ -230,7 +237,10 @@ def test_save_model_metadata():
 
         assert loaded["model_type"] == "RandomForestClassifier"
         assert loaded["threshold"]["value"] == 0.55
-        assert loaded["threshold"]["selection_method"] == "Business cost optimization on OOF probabilities"
+        assert (
+            loaded["threshold"]["selection_method"]
+            == "Business cost optimization on OOF probabilities"
+        )
     finally:
         temp_path.unlink()
 

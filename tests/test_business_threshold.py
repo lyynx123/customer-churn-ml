@@ -124,7 +124,9 @@ class TestBusinessOptimization:
         y_proba = [0.2, 0.8, 0.6, 0.9]
         costs = CostMatrix(cost_tn=0.0, cost_fp=10.0, cost_fn=100.0, cost_tp=10.0)
         grid = [0.4, 0.5]
-        result = optimize_threshold_business(y_true, y_proba, costs, threshold_grid=grid)
+        result = optimize_threshold_business(
+            y_true, y_proba, costs, threshold_grid=grid
+        )
         # With equal cost, tie-breaking prefers higher recall → lower threshold (0.4)
         assert result.selected_threshold == 0.4
 
@@ -151,7 +153,4 @@ class TestBusinessOptimization:
         r1 = optimize_threshold_business(y_true, y_proba, costs)
         r2 = optimize_threshold_business(y_true, y_proba, costs)
         assert r1.selected_threshold == r2.selected_threshold
-        assert (
-            r1.selected_metrics["total_cost"]
-            == r2.selected_metrics["total_cost"]
-        )
+        assert r1.selected_metrics["total_cost"] == r2.selected_metrics["total_cost"]

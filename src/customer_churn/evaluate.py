@@ -72,9 +72,9 @@ def evaluate_on_test(
         "roc_auc": float(roc_auc_score(y_test, y_proba)),
         "pr_auc": float(average_precision_score(y_test, y_proba)),
         "accuracy": float(accuracy_score(y_test, y_pred)),
-        "precision": float(precision_score(y_test, y_pred, zero_division=0)),
-        "recall": float(recall_score(y_test, y_pred, zero_division=0)),
-        "f1": float(f1_score(y_test, y_pred, zero_division=0)),
+        "precision": float(precision_score(y_test, y_pred, zero_division=0)),  # type: ignore[call-overload]
+        "recall": float(recall_score(y_test, y_pred, zero_division=0)),  # type: ignore[call-overload]
+        "f1": float(f1_score(y_test, y_pred, zero_division=0)),  # type: ignore[call-overload]
     }
 
     # Confusion matrix (labels: 0=No, 1=Yes)
@@ -88,7 +88,7 @@ def evaluate_on_test(
         labels=[0, 1],
         target_names=["No", "Yes"],
         output_dict=True,
-        zero_division=0,
+        zero_division=0,  # type: ignore[call-overload]
     )
 
     return {

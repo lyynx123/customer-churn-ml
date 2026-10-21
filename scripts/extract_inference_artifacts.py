@@ -71,8 +71,7 @@ def extract_schema_from_pipeline(pipeline_path: Path) -> dict[str, Any]:
     # Extract categorical allowed values from fitted OneHotEncoder
     encoder = preprocessor.named_transformers_["cat"].named_steps["encoder"]
     categorical_allowed = {
-        col: list(cats)
-        for col, cats in zip(categorical_features, encoder.categories_)
+        col: list(cats) for col, cats in zip(categorical_features, encoder.categories_)
     }
 
     # Feature order expected by preprocessor (numeric first, then categorical)
@@ -144,7 +143,9 @@ def extract_metadata(pipeline_path: Path) -> dict[str, Any]:
             "numeric_features": list(preprocessor.transformers_[0][2]),
             "categorical_features": list(preprocessor.transformers_[1][2]),
             "numeric_imputation": getattr(numeric_imputer, "strategy", "median"),
-            "categorical_imputation": getattr(categorical_imputer, "strategy", "most_frequent"),
+            "categorical_imputation": getattr(
+                categorical_imputer, "strategy", "most_frequent"
+            ),
             "categorical_encoding": f"OneHotEncoder(handle_unknown={encoder.handle_unknown!r}, sparse_output={encoder.sparse_output!r})",
         },
         "artifact_integrity": {

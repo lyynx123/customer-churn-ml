@@ -43,6 +43,7 @@ class ValidationResult:
         validated_data: Input data as a DataFrame with validated columns in the
             exact order expected by the production preprocessor.
     """
+
     validated_data: pd.DataFrame
 
 
@@ -98,7 +99,9 @@ class DataContract:
         self._categorical_features = _get_categorical_columns()
 
         # Extract categorical allowed values from fitted OneHotEncoder
-        cat_encoder = self._preprocessor.named_transformers_["cat"].named_steps["encoder"]
+        cat_encoder = self._preprocessor.named_transformers_["cat"].named_steps[
+            "encoder"
+        ]
         self._categorical_allowed = {
             col: list(cats)
             for col, cats in zip(self._categorical_features, cat_encoder.categories_)
@@ -152,13 +155,13 @@ class DataContract:
             if len(data) != 1:
                 raise ValidationError(
                     "validate() expects a single-row input. Use validate_batch() for multiple rows.",
-                    ["Input must be a single-row dict or single-row DataFrame"]
+                    ["Input must be a single-row dict or single-row DataFrame"],
                 )
             df = data.copy()
         else:
             raise ValidationError(
                 "Input must be a dict or single-row DataFrame",
-                [f"Received {type(data).__name__}"]
+                [f"Received {type(data).__name__}"],
             )
 
         errors = []
@@ -175,7 +178,9 @@ class DataContract:
 
         # Check unexpected fields (only if no missing required fields to avoid noise)
         if not missing:
-            unexpected = [col for col in df.columns if col not in self._all_valid_features]
+            unexpected = [
+                col for col in df.columns if col not in self._all_valid_features
+            ]
             if unexpected:
                 errors.append(f"Unexpected fields: {unexpected}")
 
@@ -192,6 +197,8 @@ class DataContract:
 
         # Reorder columns to match preprocessor expectation
         validated_df = df[self._required_features].copy()
+        # Type assertion for pyright: _required_features has multiple columns
+        assert isinstance(validated_df, pd.DataFrame)
 
         return ValidationResult(validated_data=validated_df)
 
@@ -212,11 +219,13 @@ class DataContract:
         if not isinstance(df, pd.DataFrame):
             raise ValidationError(
                 "validate_batch() expects a DataFrame",
-                [f"Received {type(df).__name__}"]
+                [f"Received {type(df).__name__}"],
             )
 
         if df.empty:
-            raise ValidationError("Empty DataFrame provided", ["Input DataFrame is empty"])
+            raise ValidationError(
+                "Empty DataFrame provided", ["Input DataFrame is empty"]
+            )
 
         errors = []
 
@@ -242,8 +251,9 @@ class DataContract:
         for idx, row in df.iterrows():
             row_errors: list[str] = []
             row_series = pd.Series(row)
-            self._validate_numeric_fields(row_series, row_errors, row_idx=idx)
-            self._validate_categorical_fields(row_series, row_errors, row_idx=idx)
+            row_idx: int | None = int(idx) if idx is not None else None  # type: ignore[arg-type]
+            self._validate_numeric_fields(row_series, row_errors, row_idx=row_idx)
+            self._validate_categorical_fields(row_series, row_errors, row_idx=row_idx)
             errors.extend(row_errors)
 
         if errors:
@@ -251,10 +261,17 @@ class DataContract:
 
         # Reorder columns
         validated_df = df[self._required_features].copy()
+        # Type assertion for pyright
+        assert isinstance(validated_df, pd.DataFrame)
 
         return ValidationResult(validated_data=validated_df)
 
-    def _validate_numeric_fields(self, data: pd.Series | pd.DataFrame, errors: list[str], row_idx: int | None = None):
+    def _validate_numeric_fields(
+        self,
+        data: pd.Series | pd.DataFrame,
+        errors: list[str],
+        row_idx: int | None = None,
+    ):
         """Validate numeric fields for type, finiteness, and constraints."""
         prefix = f"Row {row_idx}: " if row_idx is not None else ""
 
@@ -262,7 +279,7 @@ class DataContract:
             val = data[col]
 
             # Check for missing/NaN
-            if pd.isna(val):
+            if pd.isna(val):  # type: ignore[reportGeneralTypeIssues]
                 errors.append(f"{prefix}{col}: missing value")
                 continue
 
@@ -274,11 +291,13 @@ class DataContract:
                 if expected_type == "int":
                     # Reject float representations of integers (e.g., 1.0)
                     if isinstance(val, float) and not val.is_integer():
-                        errors.append(f"{prefix}{col}: expected integer, got float {val}")
+                        errors.append(
+                            f"{prefix}{col}: expected integer, got float {val}"
+                        )
                         continue
-                    val = int(val)
+                    val = int(val)  # type: ignore[arg-type]
                 else:
-                    val = float(val)
+                    val = float(val)  # type: ignore[arg-type]
 
                 if not np.isfinite(val):
                     errors.append(f"{prefix}{col}: non-finite value {val}")
@@ -286,16 +305,27 @@ class DataContract:
 
                 # Constraint checks
                 if "allowed" in constraint and val not in constraint["allowed"]:
-                    errors.append(f"{prefix}{col}: value {val} not in allowed set {constraint['allowed']}")
+                    errors.append(
+                        f"{prefix}{col}: value {val} not in allowed set {constraint['allowed']}"
+                    )
                 if "min" in constraint and val < constraint["min"]:
-                    errors.append(f"{prefix}{col}: value {val} below minimum {constraint['min']}")
+                    errors.append(
+                        f"{prefix}{col}: value {val} below minimum {constraint['min']}"
+                    )
                 if "max" in constraint and val > constraint["max"]:
-                    errors.append(f"{prefix}{col}: value {val} above maximum {constraint['max']}")
+                    errors.append(
+                        f"{prefix}{col}: value {val} above maximum {constraint['max']}"
+                    )
 
             except (ValueError, TypeError):
                 errors.append(f"{prefix}{col}: invalid {expected_type} value {val}")
 
-    def _validate_categorical_fields(self, data: pd.Series | pd.DataFrame, errors: list[str], row_idx: int | None = None):
+    def _validate_categorical_fields(
+        self,
+        data: pd.Series | pd.DataFrame,
+        errors: list[str],
+        row_idx: int | None = None,
+    ):
         """Validate categorical fields against fitted encoder categories."""
         prefix = f"Row {row_idx}: " if row_idx is not None else ""
 
@@ -303,7 +333,7 @@ class DataContract:
             val = data[col]
 
             # Check for missing/NaN
-            if pd.isna(val) or (isinstance(val, str) and val.strip() == ""):
+            if pd.isna(val) or (isinstance(val, str) and val.strip() == ""):  # type: ignore[reportGeneralTypeIssues]
                 errors.append(f"{prefix}{col}: missing value")
                 continue
 
@@ -321,7 +351,9 @@ class DataContract:
                     )
 
 
-def _extract_categorical_allowed_from_pipeline(pipeline: Pipeline) -> dict[str, list[str]]:
+def _extract_categorical_allowed_from_pipeline(
+    pipeline: Pipeline,
+) -> dict[str, list[str]]:
     """Extract categorical allowed values from a fitted pipeline's OneHotEncoder.
 
     This is a standalone utility for testing and external schema extraction.

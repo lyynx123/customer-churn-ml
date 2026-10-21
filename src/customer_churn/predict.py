@@ -194,7 +194,9 @@ class ChurnPredictor:
         """
         return self.pipeline.predict_proba(X_validated)[:, 1]
 
-    def _infer_predict(self, X_validated: pd.DataFrame, threshold: float | None = None) -> np.ndarray:
+    def _infer_predict(
+        self, X_validated: pd.DataFrame, threshold: float | None = None
+    ) -> np.ndarray:
         """Private inference for binary predictions on validated data."""
         proba = self._infer_proba(X_validated)
         thresh = threshold if threshold is not None else self.threshold
@@ -394,7 +396,9 @@ def main():
     print("=" * 80)
     print(f"Pipeline saved to: {PIPELINE_PATH}")
     print(f"Metadata saved to: {METADATA_PATH}")
-    print(f"Default threshold: {DEFAULT_THRESHOLD} (business cost optimization from Phase 11)")
+    print(
+        f"Default threshold: {DEFAULT_THRESHOLD} (business cost optimization from Phase 11)"
+    )
 
     return pipeline
 

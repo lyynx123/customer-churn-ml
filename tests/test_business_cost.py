@@ -48,16 +48,24 @@ class TestCostFormula:
     def test_cost_validation_negative(self):
         """Negative costs must raise ValueError."""
         with pytest.raises(ValueError, match="must be non-negative"):
-            validate_costs(CostMatrix(cost_tn=-1.0, cost_fp=0.0, cost_fn=0.0, cost_tp=0.0))
+            validate_costs(
+                CostMatrix(cost_tn=-1.0, cost_fp=0.0, cost_fn=0.0, cost_tp=0.0)
+            )
 
         with pytest.raises(ValueError, match="must be non-negative"):
-            validate_costs(CostMatrix(cost_tn=0.0, cost_fp=-5.0, cost_fn=0.0, cost_tp=0.0))
+            validate_costs(
+                CostMatrix(cost_tn=0.0, cost_fp=-5.0, cost_fn=0.0, cost_tp=0.0)
+            )
 
         with pytest.raises(ValueError, match="must be non-negative"):
-            validate_costs(CostMatrix(cost_tn=0.0, cost_fp=0.0, cost_fn=-10.0, cost_tp=0.0))
+            validate_costs(
+                CostMatrix(cost_tn=0.0, cost_fp=0.0, cost_fn=-10.0, cost_tp=0.0)
+            )
 
         with pytest.raises(ValueError, match="must be non-negative"):
-            validate_costs(CostMatrix(cost_tn=0.0, cost_fp=0.0, cost_fn=0.0, cost_tp=-3.0))
+            validate_costs(
+                CostMatrix(cost_tn=0.0, cost_fp=0.0, cost_fn=0.0, cost_tp=-3.0)
+            )
 
     def test_confusion_matrix_total_matches(self):
         """TN + FP + FN + TP must equal total samples."""

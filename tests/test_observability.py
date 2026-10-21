@@ -178,7 +178,9 @@ class TestMetricsCollector:
     def test_artifact_load_failure_categorization(self):
         """Test artifact loading error categorization."""
         collector = MetricsCollector()
-        collector.record_failure("from_artifacts", ErrorCategory.ARTIFACT_LOAD_ERROR, 0.28)
+        collector.record_failure(
+            "from_artifacts", ErrorCategory.ARTIFACT_LOAD_ERROR, 0.28
+        )
         assert collector.artifact_load_failure_count == 1
 
     def test_failed_not_counted_as_success(self):
@@ -253,6 +255,7 @@ class TestMetricsCollector:
         lines = output_path.read_text().strip().split("\n")
         assert len(lines) == 2
         import json
+
         event1 = json.loads(lines[0])
         assert event1["event_type"] == "predict"
         assert event1["success"] is True
@@ -272,37 +275,45 @@ class TestErrorCategorization:
 
     def test_validation_error(self):
         from customer_churn.portable_predict import PortableValidationError
+
         error = PortableValidationError("test", ["missing field"])
         from customer_churn.observability import _categorize_error
+
         assert _categorize_error(error) == ErrorCategory.VALIDATION_ERROR
 
     def test_file_not_found(self):
         from customer_churn.observability import _categorize_error
+
         error = FileNotFoundError("model not found")
         assert _categorize_error(error) == ErrorCategory.ARTIFACT_LOAD_ERROR
 
     def test_integrity_value_error(self):
         from customer_churn.observability import _categorize_error
+
         error = ValueError("Artifact integrity check failed: SHA256 mismatch")
         assert _categorize_error(error) == ErrorCategory.ARTIFACT_INTEGRITY_ERROR
 
     def test_generic_value_error(self):
         from customer_churn.observability import _categorize_error
+
         error = ValueError("some other error")
         assert _categorize_error(error) == ErrorCategory.ARTIFACT_LOAD_ERROR
 
     def test_os_error(self):
         from customer_churn.observability import _categorize_error
+
         error = OSError("permission denied")
         assert _categorize_error(error) == ErrorCategory.ARTIFACT_LOAD_ERROR
 
     def test_json_decode_error(self):
         from customer_churn.observability import _categorize_error
+
         error = json.JSONDecodeError("invalid", "{}", 0)
         assert _categorize_error(error) == ErrorCategory.ARTIFACT_LOAD_ERROR
 
     def test_unknown_error(self):
         from customer_churn.observability import _categorize_error
+
         error = RuntimeError("unexpected")
         assert _categorize_error(error) == ErrorCategory.UNKNOWN_ERROR
 
@@ -415,7 +426,8 @@ class TestPortablePredictorWithMetrics:
         assert collector.success_count == initial + 1
         assert collector.total_predictions == 3
         assert sum(
-            e.positive_predictions for e in collector.events
+            e.positive_predictions
+            for e in collector.events
             if e.event_type == "predict_batch"
         ) == sum(r for r in result["predictions"])
         assert collector.events[-1].batch_size == 3
@@ -480,7 +492,12 @@ class TestPortablePredictorWithMetrics:
         result_without = predictor_no_metrics.predict_batch(df)
 
         assert result_with["predictions"] == result_without["predictions"]
-        assert np.allclose(result_with["probabilities"], result_without["probabilities"], rtol=1e-10, atol=1e-12)
+        assert np.allclose(
+            result_with["probabilities"],
+            result_without["probabilities"],
+            rtol=1e-10,
+            atol=1e-12,
+        )
         assert result_with["threshold"] == result_without["threshold"]
 
     def test_predict_single_unchanged(self, predictor, valid_sample):
@@ -596,7 +613,9 @@ class TestBackwardCompatibility:
         r2 = predictor_with.predict_batch(df)
 
         assert r1["predictions"] == r2["predictions"]
-        assert np.allclose(r1["probabilities"], r2["probabilities"], rtol=1e-10, atol=1e-12)
+        assert np.allclose(
+            r1["probabilities"], r2["probabilities"], rtol=1e-10, atol=1e-12
+        )
 
     def test_integrity_verification_default_enabled(self, artifacts_dir):
         """Integrity verification still enabled by default."""
@@ -607,16 +626,33 @@ class TestBackwardCompatibility:
     def test_cli_args_still_work(self, artifacts_dir):
         """CLI arguments unchanged."""
         import subprocess
-        fixture = Path(__file__).resolve().parents[1] / "tests/fixtures/portable_smoke_input.csv"
+
+        fixture = (
+            Path(__file__).resolve().parents[1]
+            / "tests/fixtures/portable_smoke_input.csv"
+        )
         with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
             output_path = Path(f.name)
         try:
-            result = subprocess.run([
-                "uv", "run", "python", "-m", "customer_churn.portable_predict",
-                "--input", str(fixture),
-                "--artifacts", str(artifacts_dir),
-                "--output", str(output_path),
-            ], capture_output=True, text=True, cwd=Path(__file__).resolve().parents[1], check=False)
+            result = subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "python",
+                    "-m",
+                    "customer_churn.portable_predict",
+                    "--input",
+                    str(fixture),
+                    "--artifacts",
+                    str(artifacts_dir),
+                    "--output",
+                    str(output_path),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=Path(__file__).resolve().parents[1],
+                check=False,
+            )
             assert result.returncode == 0
             assert output_path.exists()
         finally:
@@ -664,7 +700,9 @@ class TestInferenceBehaviorComparison:
         r1 = predictor_with.predict_batch(df_multi)
         r2 = predictor_without.predict_batch(df_multi)
         assert r1["predictions"] == r2["predictions"]
-        assert np.allclose(r1["probabilities"], r2["probabilities"], rtol=1e-10, atol=1e-12)
+        assert np.allclose(
+            r1["probabilities"], r2["probabilities"], rtol=1e-10, atol=1e-12
+        )
         assert r1["threshold"] == r2["threshold"]
 
         # Test predict_single

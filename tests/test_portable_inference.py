@@ -30,6 +30,7 @@ from customer_churn.predict import ChurnPredictor, load_pipeline
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture(scope="module")
 def artifacts_dir():
     """Models directory with artifacts."""
@@ -85,6 +86,7 @@ def test_data_no_nan():
 # =============================================================================
 # Artifact Tests
 # =============================================================================
+
 
 def test_schema_exists(artifacts_dir):
     """inference_schema.json exists."""
@@ -148,7 +150,9 @@ def test_categorical_domains_match_encoder(artifacts_dir):
     for i, col in enumerate(cat_features):
         schema_cats = set(schema["categorical_features"][col])
         encoder_cats = set(encoder.categories_[i])
-        assert schema_cats == encoder_cats, f"Domain mismatch for {col}: {schema_cats} vs {encoder_cats}"
+        assert schema_cats == encoder_cats, (
+            f"Domain mismatch for {col}: {schema_cats} vs {encoder_cats}"
+        )
 
 
 def test_feature_ordering_is_correct(artifacts_dir):
@@ -174,7 +178,10 @@ def test_threshold_equals_028(artifacts_dir):
     assert metadata["production_threshold"] == 0.28
     assert metadata["threshold_metadata"]["value"] == 0.28
     assert metadata["threshold_metadata"]["source_phase"] == "Phase 11"
-    assert metadata["threshold_metadata"]["selection_method"] == "Business cost optimization on OOF probabilities"
+    assert (
+        metadata["threshold_metadata"]["selection_method"]
+        == "Business cost optimization on OOF probabilities"
+    )
 
 
 def test_sha256_matches_pipeline(artifacts_dir):
@@ -191,6 +198,7 @@ def test_sha256_matches_pipeline(artifacts_dir):
 # =============================================================================
 # Runtime Tests
 # =============================================================================
+
 
 def test_predictor_loads_successfully(artifacts_dir):
     """Portable predictor loads without errors."""
@@ -235,9 +243,17 @@ def test_integrity_verification_works(artifacts_dir):
         tmpdir = Path(tmpdir)
         # Copy artifacts
         import shutil
-        shutil.copy(artifacts_dir / "final_pipeline.joblib", tmpdir / "final_pipeline.joblib")
-        shutil.copy(artifacts_dir / "inference_schema.json", tmpdir / "inference_schema.json")
-        shutil.copy(artifacts_dir / "inference_metadata.json", tmpdir / "inference_metadata.json")
+
+        shutil.copy(
+            artifacts_dir / "final_pipeline.joblib", tmpdir / "final_pipeline.joblib"
+        )
+        shutil.copy(
+            artifacts_dir / "inference_schema.json", tmpdir / "inference_schema.json"
+        )
+        shutil.copy(
+            artifacts_dir / "inference_metadata.json",
+            tmpdir / "inference_metadata.json",
+        )
 
         # Corrupt metadata hash
         with open(tmpdir / "inference_metadata.json") as f:
@@ -260,7 +276,10 @@ def test_integrity_verification_works(artifacts_dir):
 # Compatibility Tests
 # =============================================================================
 
-def test_probability_matches_current(portable_predictor, current_predictor, test_data_no_nan):
+
+def test_probability_matches_current(
+    portable_predictor, current_predictor, test_data_no_nan
+):
     """Portable predict_proba matches current within tolerance."""
     # Current ChurnPredictor predict_proba only accepts single row
     # Use predict_batch for multi-row comparison
@@ -270,11 +289,14 @@ def test_probability_matches_current(portable_predictor, current_predictor, test
     prob_current = np.array(batch_current["probabilities"])
     prob_portable = np.array(batch_portable["probabilities"])
 
-    assert np.allclose(prob_portable, prob_current, rtol=1e-10, atol=1e-12), \
+    assert np.allclose(prob_portable, prob_current, rtol=1e-10, atol=1e-12), (
         f"Max diff: {np.max(np.abs(prob_portable - prob_current))}"
+    )
 
 
-def test_binary_prediction_matches_current(portable_predictor, current_predictor, test_data_no_nan):
+def test_binary_prediction_matches_current(
+    portable_predictor, current_predictor, test_data_no_nan
+):
     """Portable predict matches current exactly."""
     # Current ChurnPredictor predict only accepts single row
     # Use predict_batch for multi-row comparison
@@ -284,26 +306,34 @@ def test_binary_prediction_matches_current(portable_predictor, current_predictor
     pred_current = np.array(batch_current["predictions"])
     pred_portable = np.array(batch_portable["predictions"])
 
-    assert np.array_equal(pred_portable, pred_current), \
+    assert np.array_equal(pred_portable, pred_current), (
         f"Mismatch count: {np.sum(pred_portable != pred_current)}"
+    )
 
 
-def test_predict_single_matches_current(portable_predictor, current_predictor, test_data_no_nan):
+def test_predict_single_matches_current(
+    portable_predictor, current_predictor, test_data_no_nan
+):
     """Portable predict_single matches current exactly."""
     for i in range(min(50, len(test_data_no_nan))):
         row = test_data_no_nan.iloc[i].to_dict()
         r1 = current_predictor.predict_single(row)
         r2 = portable_predictor.predict_single(row)
 
-        assert abs(r1["churn_probability"] - r2["churn_probability"]) < 1e-10, \
+        assert abs(r1["churn_probability"] - r2["churn_probability"]) < 1e-10, (
             f"Sample {i} prob mismatch: {r1['churn_probability']} vs {r2['churn_probability']}"
-        assert r1["prediction"] == r2["prediction"], \
+        )
+        assert r1["prediction"] == r2["prediction"], (
             f"Sample {i} pred mismatch: {r1['prediction']} vs {r2['prediction']}"
-        assert r1["threshold"] == r2["threshold"], \
+        )
+        assert r1["threshold"] == r2["threshold"], (
             f"Sample {i} thresh mismatch: {r1['threshold']} vs {r2['threshold']}"
+        )
 
 
-def test_predict_batch_matches_current(portable_predictor, current_predictor, test_data_no_nan):
+def test_predict_batch_matches_current(
+    portable_predictor, current_predictor, test_data_no_nan
+):
     """Portable predict_batch matches current exactly."""
     batch_current = current_predictor.predict_batch(test_data_no_nan)
     batch_portable = portable_predictor.predict_batch(test_data_no_nan)
@@ -319,6 +349,7 @@ def test_predict_batch_matches_current(portable_predictor, current_predictor, te
 # =============================================================================
 # Validation Tests
 # =============================================================================
+
 
 def test_validation_missing_fields(portable_predictor):
     """Missing required fields rejected."""
@@ -468,14 +499,23 @@ def test_validation_empty_string_categorical(portable_predictor, valid_sample):
 # Failure Tests
 # =============================================================================
 
+
 def test_corrupted_sha256_fails(artifacts_dir):
     """Corrupted SHA256 in metadata causes failure."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
         import shutil
-        shutil.copy(artifacts_dir / "final_pipeline.joblib", tmpdir / "final_pipeline.joblib")
-        shutil.copy(artifacts_dir / "inference_schema.json", tmpdir / "inference_schema.json")
-        shutil.copy(artifacts_dir / "inference_metadata.json", tmpdir / "inference_metadata.json")
+
+        shutil.copy(
+            artifacts_dir / "final_pipeline.joblib", tmpdir / "final_pipeline.joblib"
+        )
+        shutil.copy(
+            artifacts_dir / "inference_schema.json", tmpdir / "inference_schema.json"
+        )
+        shutil.copy(
+            artifacts_dir / "inference_metadata.json",
+            tmpdir / "inference_metadata.json",
+        )
 
         with open(tmpdir / "inference_metadata.json") as f:
             meta = json.load(f)
@@ -492,8 +532,13 @@ def test_missing_artifact_fails(artifacts_dir):
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
         import shutil
-        shutil.copy(artifacts_dir / "final_pipeline.joblib", tmpdir / "final_pipeline.joblib")
-        shutil.copy(artifacts_dir / "inference_schema.json", tmpdir / "inference_schema.json")
+
+        shutil.copy(
+            artifacts_dir / "final_pipeline.joblib", tmpdir / "final_pipeline.joblib"
+        )
+        shutil.copy(
+            artifacts_dir / "inference_schema.json", tmpdir / "inference_schema.json"
+        )
         # Missing metadata
 
         with pytest.raises(FileNotFoundError, match="Metadata not found"):
@@ -505,8 +550,13 @@ def test_malformed_metadata_fails(artifacts_dir):
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
         import shutil
-        shutil.copy(artifacts_dir / "final_pipeline.joblib", tmpdir / "final_pipeline.joblib")
-        shutil.copy(artifacts_dir / "inference_schema.json", tmpdir / "inference_schema.json")
+
+        shutil.copy(
+            artifacts_dir / "final_pipeline.joblib", tmpdir / "final_pipeline.joblib"
+        )
+        shutil.copy(
+            artifacts_dir / "inference_schema.json", tmpdir / "inference_schema.json"
+        )
         # Write invalid JSON
         (tmpdir / "inference_metadata.json").write_text("not valid json")
 
@@ -519,8 +569,14 @@ def test_malformed_schema_fails(artifacts_dir):
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
         import shutil
-        shutil.copy(artifacts_dir / "final_pipeline.joblib", tmpdir / "final_pipeline.joblib")
-        shutil.copy(artifacts_dir / "inference_metadata.json", tmpdir / "inference_metadata.json")
+
+        shutil.copy(
+            artifacts_dir / "final_pipeline.joblib", tmpdir / "final_pipeline.joblib"
+        )
+        shutil.copy(
+            artifacts_dir / "inference_metadata.json",
+            tmpdir / "inference_metadata.json",
+        )
         # Write invalid JSON
         (tmpdir / "inference_schema.json").write_text("not valid json")
 
@@ -531,6 +587,7 @@ def test_malformed_schema_fails(artifacts_dir):
 # =============================================================================
 # CLI Tests
 # =============================================================================
+
 
 def test_cli_valid_input():
     """CLI with valid input succeeds."""
@@ -546,12 +603,25 @@ Female,0,Yes,No,12,Yes,No,DSL,No,No,No,No,No,No,Month-to-month,Yes,Electronic ch
     with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
         output_path = f.name
 
-    result = subprocess.run([
-        "uv", "run", "python", "-m", "customer_churn.portable_predict",
-        "--input", input_path,
-        "--artifacts", "models",
-        "--output", output_path
-    ], capture_output=True, text=True, check=False, cwd=Path(__file__).resolve().parents[1])
+    result = subprocess.run(
+        [
+            "uv",
+            "run",
+            "python",
+            "-m",
+            "customer_churn.portable_predict",
+            "--input",
+            input_path,
+            "--artifacts",
+            "models",
+            "--output",
+            output_path,
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=Path(__file__).resolve().parents[1],
+    )
 
     assert result.returncode == 0, f"CLI failed: {result.stderr}"
     assert "Predictions saved" in result.stdout
@@ -578,15 +648,31 @@ def test_cli_invalid_input_fails():
     with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
         output_path = f.name
 
-    result = subprocess.run([
-        "uv", "run", "python", "-m", "customer_churn.portable_predict",
-        "--input", input_path,
-        "--artifacts", "models",
-        "--output", output_path
-    ], capture_output=True, text=True, check=False, cwd=Path(__file__).resolve().parents[1])
+    result = subprocess.run(
+        [
+            "uv",
+            "run",
+            "python",
+            "-m",
+            "customer_churn.portable_predict",
+            "--input",
+            input_path,
+            "--artifacts",
+            "models",
+            "--output",
+            output_path,
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=Path(__file__).resolve().parents[1],
+    )
 
     assert result.returncode != 0, "CLI should fail with invalid input"
-    assert "Missing required fields" in result.stderr or "Missing required fields" in result.stdout
+    assert (
+        "Missing required fields" in result.stderr
+        or "Missing required fields" in result.stdout
+    )
 
     Path(input_path).unlink()
     Path(output_path).unlink()
@@ -595,6 +681,7 @@ def test_cli_invalid_input_fails():
 # =============================================================================
 # Extraction Tests
 # =============================================================================
+
 
 def test_extract_inference_artifacts_function(artifacts_dir):
     """extract_inference_artifacts function works."""
@@ -614,7 +701,10 @@ def test_extract_inference_artifacts_function(artifacts_dir):
 
 def test_extract_deterministic(artifacts_dir):
     """Running extraction twice produces identical artifacts."""
-    with tempfile.TemporaryDirectory() as tmpdir1, tempfile.TemporaryDirectory() as tmpdir2:
+    with (
+        tempfile.TemporaryDirectory() as tmpdir1,
+        tempfile.TemporaryDirectory() as tmpdir2,
+    ):
         tmpdir1 = Path(tmpdir1)
         tmpdir2 = Path(tmpdir2)
 
@@ -638,6 +728,7 @@ def test_extract_deterministic(artifacts_dir):
 # =============================================================================
 # Metadata Tests
 # =============================================================================
+
 
 def test_metadata_has_required_fields(artifacts_dir):
     """Metadata contains all required fields."""
@@ -685,6 +776,7 @@ def test_inference_metadata_class(artifacts_dir):
 # No Training Dependency Tests
 # =============================================================================
 
+
 def test_portable_predictor_no_features_import():
     """PortableChurnPredictor does not import features.py at module load."""
     # This is verified by the fact that from_artifacts works without
@@ -705,6 +797,7 @@ def test_portable_contract_no_features_import():
 # =============================================================================
 # Schema Validation Tests (direct PortableDataContract)
 # =============================================================================
+
 
 def test_portable_contract_direct_validation(valid_sample):
     """PortableDataContract.validate works directly."""

@@ -31,7 +31,11 @@ def artifacts_dir():
 def temp_artifacts(artifacts_dir):
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
-        for name in ["final_pipeline.joblib", "inference_schema.json", "inference_metadata.json"]:
+        for name in [
+            "final_pipeline.joblib",
+            "inference_schema.json",
+            "inference_metadata.json",
+        ]:
             shutil.copy(artifacts_dir / name, tmpdir / name)
         yield tmpdir
 
@@ -55,7 +59,10 @@ def test_verify_metadata_threshold(artifacts_dir):
     assert metadata["production_threshold"] == 0.28
     assert metadata["threshold_metadata"]["value"] == 0.28
     assert metadata["threshold_metadata"]["source_phase"] == "Phase 11"
-    assert metadata["threshold_metadata"]["selection_method"] == "Business cost optimization on OOF probabilities"
+    assert (
+        metadata["threshold_metadata"]["selection_method"]
+        == "Business cost optimization on OOF probabilities"
+    )
 
 
 def test_verify_pipeline_loads(artifacts_dir):
@@ -260,4 +267,7 @@ def test_verify_script_cli_fails_on_missing_artifact(temp_artifacts):
         check=False,
     )
     assert result.returncode != 0
-    assert "Verification FAILED" in result.stderr or "Missing required artifact" in result.stderr
+    assert (
+        "Verification FAILED" in result.stderr
+        or "Missing required artifact" in result.stderr
+    )

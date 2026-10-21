@@ -224,8 +224,7 @@ def verify_sha256_match(artifacts_dir: Path, metadata: dict[str, Any]) -> None:
 
     if actual_hash != expected_hash:
         raise VerificationError(
-            f"SHA256 mismatch. "
-            f"Expected {expected_hash}, got {actual_hash}"
+            f"SHA256 mismatch. Expected {expected_hash}, got {actual_hash}"
         )
 
 
@@ -238,7 +237,9 @@ def verify_pipeline_loads(artifacts_dir: Path) -> Pipeline:
         raise VerificationError(f"Failed to load pipeline: {e}")
 
     if not isinstance(pipeline, Pipeline):
-        raise VerificationError(f"Loaded object is not a sklearn Pipeline: {type(pipeline)}")
+        raise VerificationError(
+            f"Loaded object is not a sklearn Pipeline: {type(pipeline)}"
+        )
 
     # Verify pipeline has expected steps
     if "preprocessor" not in pipeline.named_steps:
@@ -248,6 +249,7 @@ def verify_pipeline_loads(artifacts_dir: Path) -> Pipeline:
 
     # Verify model is RandomForestClassifier
     from sklearn.ensemble import RandomForestClassifier
+
     model = pipeline.named_steps["model"]
     if not isinstance(model, RandomForestClassifier):
         raise VerificationError(f"Model is not RandomForestClassifier: {type(model)}")
@@ -272,9 +274,12 @@ def verify_pipeline_loads(artifacts_dir: Path) -> Pipeline:
 
     # Verify preprocessor structure
     from sklearn.compose import ColumnTransformer
+
     preprocessor = pipeline.named_steps["preprocessor"]
     if not isinstance(preprocessor, ColumnTransformer):
-        raise VerificationError(f"Preprocessor is not ColumnTransformer: {type(preprocessor)}")
+        raise VerificationError(
+            f"Preprocessor is not ColumnTransformer: {type(preprocessor)}"
+        )
 
     # Verify transformers
     transformer_names = [name for name, _, _ in preprocessor.transformers_]
@@ -286,7 +291,9 @@ def verify_pipeline_loads(artifacts_dir: Path) -> Pipeline:
     return pipeline
 
 
-def verify_version_compatibility(schema: dict[str, Any], metadata: dict[str, Any]) -> None:
+def verify_version_compatibility(
+    schema: dict[str, Any], metadata: dict[str, Any]
+) -> None:
     """Verify schema and metadata versions are compatible."""
     schema_version = schema.get("version")
     metadata_version = metadata.get("version")

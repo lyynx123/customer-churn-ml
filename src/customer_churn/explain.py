@@ -266,10 +266,14 @@ def compute_global_shap(
     base_value = _extract_base_value(explainer, class_index=1)
     predictions = model.predict_proba(X_explain)[:, 1]
 
+    feature_names = explainer.feature_names or []
+    # Explicit cast to satisfy pyright; runtime behavior unchanged
+    # explainer.feature_names returns list[str] when fitted, None when not
+    feature_names_typed = [str(name) for name in feature_names if name is not None]
     return ShapExplanationResult(
         shap_values=shap_values,
         base_value=float(base_value),
-        feature_names=list(explainer.feature_names or []),
+        feature_names=feature_names_typed,
         predictions=predictions,
     )
 

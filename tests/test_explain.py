@@ -20,6 +20,7 @@ from customer_churn.explain import (
 # 1. Load and inspect pipeline
 # ============================================================
 
+
 def test_load_production_pipeline():
     """Pipeline loads and contains expected steps."""
     pipeline = load_production_pipeline()
@@ -32,7 +33,10 @@ def test_load_production_pipeline():
 def test_feature_names_count():
     """45 feature names after preprocessing."""
     pipeline = load_production_pipeline()
-    preprocessor, _ = pipeline.named_steps["preprocessor"], pipeline.named_steps["model"]
+    preprocessor, _ = (
+        pipeline.named_steps["preprocessor"],
+        pipeline.named_steps["model"],
+    )
     names = get_feature_names(preprocessor)
     assert len(names) == 45, f"Expected 45, got {len(names)}"
 
@@ -40,6 +44,7 @@ def test_feature_names_count():
 # ============================================================
 # 2. Background data
 # ============================================================
+
 
 def test_background_from_training():
     """Background data comes from training split, correct shape."""
@@ -59,6 +64,7 @@ def test_background_deterministic():
 # 3. Explanation data alignment
 # ============================================================
 
+
 def test_explanation_data_alignment():
     """Test data transforms to correct shape with feature names."""
     X_exp, y_true, names = load_explanation_data("test")
@@ -71,10 +77,14 @@ def test_explanation_data_alignment():
 # 4. TreeExplainer initialization
 # ============================================================
 
+
 def test_tree_explainer_initialization():
     """TreeExplainer initializes without error on production RF."""
     pipeline = load_production_pipeline()
-    preprocessor, model = pipeline.named_steps["preprocessor"], pipeline.named_steps["model"]
+    preprocessor, model = (
+        pipeline.named_steps["preprocessor"],
+        pipeline.named_steps["model"],
+    )
     names = get_feature_names(preprocessor)
     explainer = build_tree_explainer(model, names)
     assert isinstance(explainer, shap.TreeExplainer)
@@ -86,16 +96,23 @@ def test_tree_explainer_initialization():
 # 5. SHAP output shape and semantics
 # ============================================================
 
+
 def test_shap_output_shape_and_additivity():
     """SHAP values shape is (n, f, c) and additivity holds in probability space."""
     from customer_churn.features import load_data
 
     pipeline = load_production_pipeline()
-    preprocessor, model = pipeline.named_steps["preprocessor"], pipeline.named_steps["model"]
+    preprocessor, model = (
+        pipeline.named_steps["preprocessor"],
+        pipeline.named_steps["model"],
+    )
     names = get_feature_names(preprocessor)
 
     _, _, _ = load_explanation_data("test")
-    X_small = np.asarray(preprocessor.transform(load_data("test").drop(columns=["Churn"]))[:30], dtype=float)
+    X_small = np.asarray(
+        preprocessor.transform(load_data("test").drop(columns=["Churn"]))[:30],
+        dtype=float,
+    )
 
     explainer = build_tree_explainer(model, names)
     res = compute_global_shap(explainer, X_small, model)
@@ -115,7 +132,10 @@ def test_shap_output_shape_and_additivity():
 def test_binary_class_semantics():
     """SHAP class 1 corresponds to positive class 'Yes' (churn)."""
     pipeline = load_production_pipeline()
-    preprocessor, model = pipeline.named_steps["preprocessor"], pipeline.named_steps["model"]
+    preprocessor, model = (
+        pipeline.named_steps["preprocessor"],
+        pipeline.named_steps["model"],
+    )
     names = get_feature_names(preprocessor)
 
     X_exp, _, _ = load_explanation_data("test")
@@ -134,10 +154,14 @@ def test_binary_class_semantics():
 # 6. Deterministic behavior
 # ============================================================
 
+
 def test_deterministic_explanations():
     """Same input produces same SHAP values."""
     pipeline = load_production_pipeline()
-    preprocessor, model = pipeline.named_steps["preprocessor"], pipeline.named_steps["model"]
+    preprocessor, model = (
+        pipeline.named_steps["preprocessor"],
+        pipeline.named_steps["model"],
+    )
     names = get_feature_names(preprocessor)
 
     X_exp, _, _ = load_explanation_data("test")
@@ -155,10 +179,14 @@ def test_deterministic_explanations():
 # 7. No model refitting during explanation
 # ============================================================
 
+
 def test_no_model_mutation():
     """Explanation functions never call fit() on production model/preprocessor."""
     pipeline = load_production_pipeline()
-    preprocessor, model = pipeline.named_steps["preprocessor"], pipeline.named_steps["model"]
+    preprocessor, model = (
+        pipeline.named_steps["preprocessor"],
+        pipeline.named_steps["model"],
+    )
     names = get_feature_names(preprocessor)
 
     # Capture original model state
@@ -182,10 +210,14 @@ def test_no_model_mutation():
 # 8. Feature grouping aggregation
 # ============================================================
 
+
 def test_original_feature_grouping():
     """One-hot features correctly aggregated to original features."""
     pipeline = load_production_pipeline()
-    preprocessor, model = pipeline.named_steps["preprocessor"], pipeline.named_steps["model"]
+    preprocessor, model = (
+        pipeline.named_steps["preprocessor"],
+        pipeline.named_steps["model"],
+    )
     names = get_feature_names(preprocessor)
 
     X_exp, _, _ = load_explanation_data("test")
@@ -208,6 +240,7 @@ def test_original_feature_grouping():
 # ============================================================
 # 9. Local example selection
 # ============================================================
+
 
 def test_local_example_selection():
     """TP/TN/FP/FN indices correctly identified from test set."""
@@ -239,10 +272,14 @@ def test_local_example_selection():
 # 10. Local explanation generation
 # ============================================================
 
+
 def test_local_explanation_generation():
     """Local SHAP explanations generated for TP/TN/FP/FN."""
     pipeline = load_production_pipeline()
-    preprocessor, model = pipeline.named_steps["preprocessor"], pipeline.named_steps["model"]
+    preprocessor, model = (
+        pipeline.named_steps["preprocessor"],
+        pipeline.named_steps["model"],
+    )
     names = get_feature_names(preprocessor)
 
     X_exp, y_true, _ = load_explanation_data("test")
@@ -250,7 +287,9 @@ def test_local_explanation_generation():
     indices = select_local_examples(X_exp, y_true, preds, PRODUCTION_THRESHOLD)
 
     explainer = build_tree_explainer(model, names)
-    locals = compute_local_shap(explainer, X_exp, indices, y_true, model, names, PRODUCTION_THRESHOLD)
+    locals = compute_local_shap(
+        explainer, X_exp, indices, y_true, model, names, PRODUCTION_THRESHOLD
+    )
 
     for stype in ["tp", "tn", "fp", "fn"]:
         assert stype in locals
@@ -275,10 +314,14 @@ def test_local_explanation_generation():
 # 11. Invalid / empty input handling
 # ============================================================
 
+
 def test_empty_input_handling():
     """Empty arrays raise appropriate errors."""
     pipeline = load_production_pipeline()
-    preprocessor, model = pipeline.named_steps["preprocessor"], pipeline.named_steps["model"]
+    preprocessor, model = (
+        pipeline.named_steps["preprocessor"],
+        pipeline.named_steps["model"],
+    )
     names = get_feature_names(preprocessor)
     explainer = build_tree_explainer(model, names)
 
@@ -292,6 +335,7 @@ def test_empty_input_handling():
 # ============================================================
 # 12. Background never uses test data
 # ============================================================
+
 
 def test_background_never_uses_test():
     """Background is always sourced from training, not test."""
@@ -307,10 +351,14 @@ def test_background_never_uses_test():
 # 13. Artifact schema (smoke)
 # ============================================================
 
+
 def test_artifact_schema_sanity():
     """Provenance metadata contains expected keys."""
     pipeline = load_production_pipeline()
-    preprocessor, model = pipeline.named_steps["preprocessor"], pipeline.named_steps["model"]
+    preprocessor, model = (
+        pipeline.named_steps["preprocessor"],
+        pipeline.named_steps["model"],
+    )
     names = get_feature_names(preprocessor)
     explainer = build_tree_explainer(model, names)
 
@@ -319,13 +367,22 @@ def test_artifact_schema_sanity():
 
     res = compute_global_shap(explainer, X_small, model)
     from customer_churn.explain import build_provenance_metadata
+
     meta = build_provenance_metadata(res)
 
     required = [
-        "production_model_artifact", "model_type", "phase_8c_config",
-        "business_threshold", "output_space", "positive_class",
-        "expected_value_class1", "feature_count", "shap_version",
-        "reference_source", "explanation_source", "phase12_calibrated_model_explained",
+        "production_model_artifact",
+        "model_type",
+        "phase_8c_config",
+        "business_threshold",
+        "output_space",
+        "positive_class",
+        "expected_value_class1",
+        "feature_count",
+        "shap_version",
+        "reference_source",
+        "explanation_source",
+        "phase12_calibrated_model_explained",
     ]
     for key in required:
         assert key in meta, f"Missing metadata key: {key}"

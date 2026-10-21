@@ -164,9 +164,7 @@ def average_cost_per_customer(
     return total_cost / total
 
 
-def cost_per_predicted_churn(
-    fp: int, tp: int, costs: CostMatrix
-) -> float:
+def cost_per_predicted_churn(fp: int, tp: int, costs: CostMatrix) -> float:
     """Calculate cost per predicted churn.
 
     Useful to understand marginal cost of intervention flagging.
@@ -254,9 +252,7 @@ def compute_business_cost_metrics(
         )
 
     if not set(np.unique(y_true)).issubset({0, 1}):
-        raise ValueError(
-            f"y_true contains labels other than 0/1: {np.unique(y_true)}"
-        )
+        raise ValueError(f"y_true contains labels other than 0/1: {np.unique(y_true)}")
 
     y_pred = (y_proba >= threshold).astype(int)
 
@@ -271,9 +267,9 @@ def compute_business_cost_metrics(
     cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
     tn, fp, fn, tp = cm.ravel()
 
-    precision = float(precision_score(y_true, y_pred, zero_division=0))
-    recall = float(recall_score(y_true, y_pred, zero_division=0))
-    f1 = float(f1_score(y_true, y_pred, zero_division=0))
+    precision = float(precision_score(y_true, y_pred, zero_division=0))  # type: ignore[call-overload]
+    recall = float(recall_score(y_true, y_pred, zero_division=0))  # type: ignore[call-overload]
+    f1 = float(f1_score(y_true, y_pred, zero_division=0))  # type: ignore[call-overload]
     accuracy = float(accuracy_score(y_true, y_pred))
 
     specificity = float(tn / (tn + fp)) if (tn + fp) > 0 else 0.0

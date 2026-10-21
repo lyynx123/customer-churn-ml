@@ -520,9 +520,7 @@ def plot_cost_curve(
         f1_vals = [r["f1"] for r in result.all_threshold_results]
 
         ax2.plot(thresholds, recall_vals, "g--", alpha=0.6, label="Recall (OOF)")
-        ax2.plot(
-            thresholds, precision_vals, "m--", alpha=0.6, label="Precision (OOF)"
-        )
+        ax2.plot(thresholds, precision_vals, "m--", alpha=0.6, label="Precision (OOF)")
         ax2.plot(thresholds, f1_vals, "c--", alpha=0.6, label="F1 (OOF)")
         ax2.set_ylabel("Secondary Metrics (OOF)", color="gray")
         ax2.tick_params(axis="y", labelcolor="gray")
@@ -588,7 +586,9 @@ def evaluate_on_test_with_business_threshold(
     print(f"Scoring frozen test set ({len(X_test)} samples)...")
     y_proba_test = pipeline.predict_proba(X_test)[:, 1]
 
-    return compute_business_cost_metrics(y_test, y_proba_test, selected_threshold, costs)
+    return compute_business_cost_metrics(
+        y_test, y_proba_test, selected_threshold, costs
+    )
 
 
 def run_phase11(
@@ -701,8 +701,10 @@ def run_phase11(
     print("PHASE 11 RESULTS")
     print("=" * 80)
     print(f"\nCost Matrix ({costs.label}):")
-    print(f"  Cost(TN)={costs.cost_tn}, Cost(FP)={costs.cost_fp}, "
-          f"Cost(FN)={costs.cost_fn}, Cost(TP)={costs.cost_tp}")
+    print(
+        f"  Cost(TN)={costs.cost_tn}, Cost(FP)={costs.cost_fp}, "
+        f"Cost(FN)={costs.cost_fn}, Cost(TP)={costs.cost_tp}"
+    )
 
     print(f"\nOOF-Optimal Business Threshold: {result.selected_threshold:.2f}")
     print(f"  Total Cost (OOF):     ${result.selected_metrics['total_cost']:.2f}")
@@ -719,16 +721,20 @@ def run_phase11(
     print(f"  Recall (Test):        {test_metrics['recall']:.4f}")
     print(f"  F1 (Test):            {test_metrics['f1']:.4f}")
     print(f"  Accuracy (Test):      {test_metrics['accuracy']:.4f}")
-    print(f"  Confusion Matrix:     TN={test_metrics['tn']}, "
-          f"FP={test_metrics['fp']}, FN={test_metrics['fn']}, "
-          f"TP={test_metrics['tp']}")
+    print(
+        f"  Confusion Matrix:     TN={test_metrics['tn']}, "
+        f"FP={test_metrics['fp']}, FN={test_metrics['fn']}, "
+        f"TP={test_metrics['tp']}"
+    )
 
     print("\nSensitivity Analysis (OOF):")
     print(f"  {'Scenario':<40} {'FN/FP':>8} {'Threshold':>12} {'Cost':>12}")
-    print(f"  {'-'*40} {'-'*8} {'-'*12} {'-'*12}")
+    print(f"  {'-' * 40} {'-' * 8} {'-' * 12} {'-' * 12}")
     for s in sensitivity:
-        print(f"  {s['scenario_label']:<40} {s['fn_to_fp_ratio']:>8.1f} "
-              f"{s['optimal_threshold']:>12.2f} {s['optimal_total_cost']:>12.2f}")
+        print(
+            f"  {s['scenario_label']:<40} {s['fn_to_fp_ratio']:>8.1f} "
+            f"{s['optimal_threshold']:>12.2f} {s['optimal_total_cost']:>12.2f}"
+        )
 
     print("\nArtifacts saved:")
     for name, path in artifact_paths.items():
@@ -737,7 +743,9 @@ def run_phase11(
     print(f"\nTie-breaking rule: {result.tie_breaking_rule}")
 
     print("\nNOTE: F1-optimal threshold from Phase 8B was 0.55.")
-    print(f"      Business-optimal threshold from Phase 11 is {result.selected_threshold:.2f}.")
+    print(
+        f"      Business-optimal threshold from Phase 11 is {result.selected_threshold:.2f}."
+    )
     print("      The business threshold is optimal for the specified cost matrix:")
     print(f"      {costs.label}.")
     print("      These differ because business cost optimization minimizes expected")

@@ -102,9 +102,9 @@ def compute_metrics(
     pos_rate = (tp + fp) / len(y_true)
 
     return {
-        "precision": float(precision_score(y_true, y_pred, zero_division=0)),
-        "recall": float(recall_score(y_true, y_pred, zero_division=0)),
-        "f1": float(f1_score(y_true, y_pred, zero_division=0)),
+        "precision": float(precision_score(y_true, y_pred, zero_division=0)),  # type: ignore[call-overload]
+        "recall": float(recall_score(y_true, y_pred, zero_division=0)),  # type: ignore[call-overload]
+        "f1": float(f1_score(y_true, y_pred, zero_division=0)),  # type: ignore[call-overload]
         "accuracy": float(accuracy_score(y_true, y_pred)),
         "fpr": float(fpr),
         "fnr": float(fnr),

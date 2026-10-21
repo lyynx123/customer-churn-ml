@@ -100,7 +100,7 @@ def subgroup_error_rates(
     grouped["total"] = grouped.sum(axis=1)
     grouped["fp_rate"] = grouped["FP"] / (grouped["FP"] + grouped["TN"])
     grouped["fn_rate"] = grouped["FN"] / (grouped["FN"] + grouped["TP"])
-    return grouped.reset_index()
+    return grouped.reset_index()  # type: ignore[return-value]
 
 
 def numerical_error_summary(

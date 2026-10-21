@@ -260,6 +260,7 @@ def metrics_context(
     """
     start_time = time.perf_counter()
     error_category: ErrorCategory | None = None
+    latency_ms = 0.0
     try:
         yield
         latency_ms = (time.perf_counter() - start_time) * 1000

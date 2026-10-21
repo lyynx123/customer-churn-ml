@@ -97,9 +97,9 @@ def compute_threshold_metrics(
     tn, fp, fn, tp = cm.ravel()
 
     # Derived metrics
-    precision = precision_score(y_true, y_pred, zero_division=0)
-    recall = recall_score(y_true, y_pred, zero_division=0)
-    f1 = f1_score(y_true, y_pred, zero_division=0)
+    precision = precision_score(y_true, y_pred, zero_division=0)  # type: ignore[call-overload]
+    recall = recall_score(y_true, y_pred, zero_division=0)  # type: ignore[call-overload]
+    f1 = f1_score(y_true, y_pred, zero_division=0)  # type: ignore[call-overload]
     accuracy = accuracy_score(y_true, y_pred)
 
     fpr = fp / (fp + tn) if (fp + tn) > 0 else 0.0

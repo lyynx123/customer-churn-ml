@@ -34,6 +34,20 @@ markers = [
     "slow: marks tests that perform full-project or expensive evaluation",
 ]
 
+[tool.mypy]
+# Per-module overrides for missing third-party type stubs
+[[tool.mypy.overrides]]
+module = [
+    "pandas.*",
+    "sklearn.*",
+    "joblib.*",
+    "pyarrow.*",
+    "shap.*",
+    "seaborn.*",
+]
+ignore_missing_imports = true
+
+
 [dependency-groups]
 dev = [
     "pyright>=1.1.414",

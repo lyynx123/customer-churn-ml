@@ -20,6 +20,7 @@ from customer_churn.predict import (
 # Fixtures
 # ============================================================
 
+
 @pytest.fixture(scope="module")
 def production_pipeline():
     """Load the production pipeline for testing."""
@@ -75,6 +76,7 @@ def valid_single_input():
 # 1. Schema Consistency with Production Pipeline
 # ============================================================
 
+
 def test_schema_consistency_with_production_pipeline(contract):
     """Contract schema must exactly match the fitted production pipeline."""
 
@@ -92,7 +94,9 @@ def test_schema_consistency_with_production_pipeline(contract):
     for i, col in enumerate(_get_categorical_columns()):
         allowed = contract.categorical_features[col]["allowed"]
         encoder_cats = list(cat_encoder.categories_[i])
-        assert set(allowed) == set(encoder_cats), f"Mismatch for {col}: {allowed} vs {encoder_cats}"
+        assert set(allowed) == set(encoder_cats), (
+            f"Mismatch for {col}: {allowed} vs {encoder_cats}"
+        )
 
 
 def test_derive_schema_from_pipeline_matches_contract():
@@ -110,9 +114,11 @@ def test_derive_schema_from_pipeline_matches_contract():
 # 2. Valid Input
 # ============================================================
 
+
 def test_valid_input_passes(contract, valid_single_input):
     """Complete valid input passes validation."""
     import pandas as pd
+
     result = contract.validate(valid_single_input)
 
     assert isinstance(result, ValidationResult)
@@ -124,7 +130,10 @@ def test_valid_input_passes(contract, valid_single_input):
 def test_valid_batch_passes(contract, valid_single_input):
     """Valid batch input passes validation."""
     import pandas as pd
-    result = contract.validate_batch(pd.DataFrame([valid_single_input, valid_single_input]))
+
+    result = contract.validate_batch(
+        pd.DataFrame([valid_single_input, valid_single_input])
+    )
 
     assert isinstance(result, ValidationResult)
     assert len(result.validated_data) == 2
@@ -134,6 +143,7 @@ def test_valid_batch_passes(contract, valid_single_input):
 # ============================================================
 # 3. Missing Required Field
 # ============================================================
+
 
 def test_missing_required_field_fails(contract):
     """Missing any required field fails validation."""
@@ -199,6 +209,7 @@ def test_missing_categorical_field_fails(contract):
 # ============================================================
 # 4. Forbidden Fields
 # ============================================================
+
 
 def test_forbidden_customerID_rejected(contract):
     """customerID in input is rejected."""
@@ -268,6 +279,7 @@ def test_forbidden_Churn_rejected(contract):
 # 5. Unexpected Fields
 # ============================================================
 
+
 def test_unexpected_field_rejected(contract):
     """Unexpected/extra fields are rejected in strict mode."""
     input_data = {
@@ -304,6 +316,7 @@ def test_unexpected_field_rejected(contract):
 # 6. Numeric Type Validation
 # ============================================================
 
+
 def test_invalid_numeric_type_fails(contract):
     """String for numeric field fails."""
     input_data = {
@@ -339,6 +352,7 @@ def test_invalid_numeric_type_fails(contract):
 # 7. Non-finite Numeric Values
 # ============================================================
 
+
 def test_nan_numeric_fails(contract):
     """NaN in numeric field fails."""
     input_data = {
@@ -367,7 +381,10 @@ def test_nan_numeric_fails(contract):
         DataContract(load_pipeline()).validate(input_data)
 
     assert "MonthlyCharges" in str(exc_info.value)
-    assert "non-finite" in str(exc_info.value).lower() or "missing" in str(exc_info.value).lower()
+    assert (
+        "non-finite" in str(exc_info.value).lower()
+        or "missing" in str(exc_info.value).lower()
+    )
 
 
 def test_inf_numeric_fails(contract):
@@ -435,6 +452,7 @@ def test_negative_inf_numeric_fails(contract):
 # ============================================================
 # 8. Numeric Constraints
 # ============================================================
+
 
 def test_senior_citizen_constraint(contract):
     """SeniorCitizen must be 0 or 1."""
@@ -564,6 +582,7 @@ def test_total_charges_min_constraint(contract):
 # 9. Categorical Values
 # ============================================================
 
+
 def test_invalid_categorical_value_fails(contract):
     """Value not in allowed categories fails."""
     input_data = {
@@ -629,6 +648,7 @@ def test_categorical_case_sensitivity(contract):
 # 10. Unknown Categorical Values
 # ============================================================
 
+
 def test_unknown_categorical_strict_fails(contract):
     """Unknown category rejected in strict (default) mode."""
     # Default contract is already strict (allow_unknown_categories=False)
@@ -655,7 +675,9 @@ def test_unknown_categorical_strict_fails(contract):
     }
 
     with pytest.raises(ValidationError) as exc_info:
-        DataContract(load_pipeline(), allow_unknown_categories=False).validate(input_data)
+        DataContract(load_pipeline(), allow_unknown_categories=False).validate(
+            input_data
+        )
 
     assert "gender" in str(exc_info.value)
 
@@ -687,13 +709,16 @@ def test_unknown_categorical_lenient_passes():
     }
 
     # Should not raise in lenient mode
-    result = DataContract(load_pipeline(), allow_unknown_categories=True).validate(input_data)
+    result = DataContract(load_pipeline(), allow_unknown_categories=True).validate(
+        input_data
+    )
     assert isinstance(result, ValidationResult)
 
 
 # ============================================================
 # 11. Missing Values
 # ============================================================
+
 
 def test_missing_numeric_value_fails(contract):
     """None/NaN for numeric field fails."""
@@ -792,6 +817,7 @@ def test_empty_string_categorical_fails(contract):
 # 12. Feature Ordering Consistency
 # ============================================================
 
+
 def test_feature_ordering_consistency(contract, valid_single_input):
     """Validated data columns must match preprocessor expected order."""
     result = contract.validate(valid_single_input)
@@ -801,6 +827,7 @@ def test_feature_ordering_consistency(contract, valid_single_input):
 # ============================================================
 # 13. Schema Consistency with Fitted Production Pipeline
 # ============================================================
+
 
 def test_schema_consistency_with_fitted_pipeline(contract):
     """Contract schema must exactly match fitted production pipeline."""
@@ -829,6 +856,7 @@ def test_schema_consistency_with_fitted_pipeline(contract):
 # 14. Pipeline Instance Sharing
 # ============================================================
 
+
 def test_contract_uses_same_pipeline_instance(production_pipeline):
     """Contract must use the exact pipeline instance passed to it."""
     contract = DataContract(production_pipeline)
@@ -855,6 +883,7 @@ def test_custom_pipeline_uses_passed_instance():
 # ============================================================
 # 15. No Model Mutation
 # ============================================================
+
 
 def test_no_model_mutation_during_validation():
     """Validation must not mutate the model or preprocessor."""
@@ -903,9 +932,11 @@ def test_no_model_mutation_during_validation():
 # 16. Single Validation Per Public API
 # ============================================================
 
+
 def test_predict_proba_validates_once(monkeypatch):
     """predict_proba validates exactly once."""
     import pandas as pd
+
     predictor = ChurnPredictor()
     call_count = 0
 
@@ -918,22 +949,42 @@ def test_predict_proba_validates_once(monkeypatch):
 
     monkeypatch.setattr(predictor._contract, "validate", counting_validate)
 
-    X = pd.DataFrame([{
-        "MonthlyCharges": 75.5, "SeniorCitizen": 0, "TotalCharges": 1500.0, "tenure": 12,
-        "Contract": "Month-to-month", "Dependents": "No", "DeviceProtection": "No",
-        "InternetService": "DSL", "MultipleLines": "No", "OnlineBackup": "No",
-        "OnlineSecurity": "No", "PaperlessBilling": "Yes", "Partner": "No",
-        "PaymentMethod": "Electronic check", "PhoneService": "Yes",
-        "StreamingMovies": "No", "StreamingTV": "No", "TechSupport": "No", "gender": "Female"
-    }])
+    X = pd.DataFrame(
+        [
+            {
+                "MonthlyCharges": 75.5,
+                "SeniorCitizen": 0,
+                "TotalCharges": 1500.0,
+                "tenure": 12,
+                "Contract": "Month-to-month",
+                "Dependents": "No",
+                "DeviceProtection": "No",
+                "InternetService": "DSL",
+                "MultipleLines": "No",
+                "OnlineBackup": "No",
+                "OnlineSecurity": "No",
+                "PaperlessBilling": "Yes",
+                "Partner": "No",
+                "PaymentMethod": "Electronic check",
+                "PhoneService": "Yes",
+                "StreamingMovies": "No",
+                "StreamingTV": "No",
+                "TechSupport": "No",
+                "gender": "Female",
+            }
+        ]
+    )
 
     predictor.predict_proba(X)
-    assert call_count == 1, f"predict_proba called validate {call_count} times, expected 1"
+    assert call_count == 1, (
+        f"predict_proba called validate {call_count} times, expected 1"
+    )
 
 
 def test_predict_validates_once(monkeypatch):
     """predict validates exactly once."""
     import pandas as pd
+
     predictor = ChurnPredictor()
     call_count = 0
 
@@ -946,14 +997,31 @@ def test_predict_validates_once(monkeypatch):
 
     monkeypatch.setattr(predictor._contract, "validate", counting_validate)
 
-    X = pd.DataFrame([{
-        "MonthlyCharges": 75.5, "SeniorCitizen": 0, "TotalCharges": 1500.0, "tenure": 12,
-        "Contract": "Month-to-month", "Dependents": "No", "DeviceProtection": "No",
-        "InternetService": "DSL", "MultipleLines": "No", "OnlineBackup": "No",
-        "OnlineSecurity": "No", "PaperlessBilling": "Yes", "Partner": "No",
-        "PaymentMethod": "Electronic check", "PhoneService": "Yes",
-        "StreamingMovies": "No", "StreamingTV": "No", "TechSupport": "No", "gender": "Female"
-    }])
+    X = pd.DataFrame(
+        [
+            {
+                "MonthlyCharges": 75.5,
+                "SeniorCitizen": 0,
+                "TotalCharges": 1500.0,
+                "tenure": 12,
+                "Contract": "Month-to-month",
+                "Dependents": "No",
+                "DeviceProtection": "No",
+                "InternetService": "DSL",
+                "MultipleLines": "No",
+                "OnlineBackup": "No",
+                "OnlineSecurity": "No",
+                "PaperlessBilling": "Yes",
+                "Partner": "No",
+                "PaymentMethod": "Electronic check",
+                "PhoneService": "Yes",
+                "StreamingMovies": "No",
+                "StreamingTV": "No",
+                "TechSupport": "No",
+                "gender": "Female",
+            }
+        ]
+    )
 
     predictor.predict(X)
     assert call_count == 1, f"predict called validate {call_count} times, expected 1"
@@ -962,6 +1030,7 @@ def test_predict_validates_once(monkeypatch):
 def test_predict_batch_validates_once(monkeypatch):
     """predict_batch validates exactly once."""
     import pandas as pd
+
     predictor = ChurnPredictor()
     call_count = 0
 
@@ -974,24 +1043,57 @@ def test_predict_batch_validates_once(monkeypatch):
 
     monkeypatch.setattr(predictor._contract, "validate_batch", counting_validate_batch)
 
-    X = pd.DataFrame([{
-        "MonthlyCharges": 75.5, "SeniorCitizen": 0, "TotalCharges": 1500.0, "tenure": 12,
-        "Contract": "Month-to-month", "Dependents": "No", "DeviceProtection": "No",
-        "InternetService": "DSL", "MultipleLines": "No", "OnlineBackup": "No",
-        "OnlineSecurity": "No", "PaperlessBilling": "Yes", "Partner": "No",
-        "PaymentMethod": "Electronic check", "PhoneService": "Yes",
-        "StreamingMovies": "No", "StreamingTV": "No", "TechSupport": "No", "gender": "Female"
-    }, {
-        "MonthlyCharges": 80.0, "SeniorCitizen": 1, "TotalCharges": 2000.0, "tenure": 24,
-        "Contract": "One year", "Dependents": "Yes", "DeviceProtection": "Yes",
-        "InternetService": "Fiber optic", "MultipleLines": "Yes", "OnlineBackup": "Yes",
-        "OnlineSecurity": "Yes", "PaperlessBilling": "No", "Partner": "Yes",
-        "PaymentMethod": "Credit card (automatic)", "PhoneService": "Yes",
-        "StreamingMovies": "Yes", "StreamingTV": "Yes", "TechSupport": "Yes", "gender": "Male"
-    }])
+    X = pd.DataFrame(
+        [
+            {
+                "MonthlyCharges": 75.5,
+                "SeniorCitizen": 0,
+                "TotalCharges": 1500.0,
+                "tenure": 12,
+                "Contract": "Month-to-month",
+                "Dependents": "No",
+                "DeviceProtection": "No",
+                "InternetService": "DSL",
+                "MultipleLines": "No",
+                "OnlineBackup": "No",
+                "OnlineSecurity": "No",
+                "PaperlessBilling": "Yes",
+                "Partner": "No",
+                "PaymentMethod": "Electronic check",
+                "PhoneService": "Yes",
+                "StreamingMovies": "No",
+                "StreamingTV": "No",
+                "TechSupport": "No",
+                "gender": "Female",
+            },
+            {
+                "MonthlyCharges": 80.0,
+                "SeniorCitizen": 1,
+                "TotalCharges": 2000.0,
+                "tenure": 24,
+                "Contract": "One year",
+                "Dependents": "Yes",
+                "DeviceProtection": "Yes",
+                "InternetService": "Fiber optic",
+                "MultipleLines": "Yes",
+                "OnlineBackup": "Yes",
+                "OnlineSecurity": "Yes",
+                "PaperlessBilling": "No",
+                "Partner": "Yes",
+                "PaymentMethod": "Credit card (automatic)",
+                "PhoneService": "Yes",
+                "StreamingMovies": "Yes",
+                "StreamingTV": "Yes",
+                "TechSupport": "Yes",
+                "gender": "Male",
+            },
+        ]
+    )
 
     predictor.predict_batch(X)
-    assert call_count == 1, f"predict_batch called validate_batch {call_count} times, expected 1"
+    assert call_count == 1, (
+        f"predict_batch called validate_batch {call_count} times, expected 1"
+    )
 
 
 def test_predict_single_validates_once(monkeypatch):
@@ -1009,21 +1111,37 @@ def test_predict_single_validates_once(monkeypatch):
     monkeypatch.setattr(predictor._contract, "validate", counting_validate)
 
     customer = {
-        "MonthlyCharges": 75.5, "SeniorCitizen": 0, "TotalCharges": 1500.0, "tenure": 12,
-        "Contract": "Month-to-month", "Dependents": "No", "DeviceProtection": "No",
-        "InternetService": "DSL", "MultipleLines": "No", "OnlineBackup": "No",
-        "OnlineSecurity": "No", "PaperlessBilling": "Yes", "Partner": "No",
-        "PaymentMethod": "Electronic check", "PhoneService": "Yes",
-        "StreamingMovies": "No", "StreamingTV": "No", "TechSupport": "No", "gender": "Female"
+        "MonthlyCharges": 75.5,
+        "SeniorCitizen": 0,
+        "TotalCharges": 1500.0,
+        "tenure": 12,
+        "Contract": "Month-to-month",
+        "Dependents": "No",
+        "DeviceProtection": "No",
+        "InternetService": "DSL",
+        "MultipleLines": "No",
+        "OnlineBackup": "No",
+        "OnlineSecurity": "No",
+        "PaperlessBilling": "Yes",
+        "Partner": "No",
+        "PaymentMethod": "Electronic check",
+        "PhoneService": "Yes",
+        "StreamingMovies": "No",
+        "StreamingTV": "No",
+        "TechSupport": "No",
+        "gender": "Female",
     }
 
     predictor.predict_single(customer)
-    assert call_count == 1, f"predict_single called validate {call_count} times, expected 1"
+    assert call_count == 1, (
+        f"predict_single called validate {call_count} times, expected 1"
+    )
 
 
 # ============================================================
 # 18. Production Threshold
 # ============================================================
+
 
 def test_production_threshold_is_028():
     """Production threshold must be 0.28 per Phase 11."""
@@ -1049,16 +1167,30 @@ def test_churn_predictor_default_threshold_is_028():
 # 19. Threshold Metadata in Outputs
 # ============================================================
 
+
 def test_predict_single_includes_threshold_metadata():
     """predict_single output includes threshold metadata."""
     predictor = ChurnPredictor()
     customer = {
-        "MonthlyCharges": 75.5, "SeniorCitizen": 0, "TotalCharges": 1500.0, "tenure": 12,
-        "Contract": "Month-to-month", "Dependents": "No", "DeviceProtection": "No",
-        "InternetService": "DSL", "MultipleLines": "No", "OnlineBackup": "No",
-        "OnlineSecurity": "No", "PaperlessBilling": "Yes", "Partner": "No",
-        "PaymentMethod": "Electronic check", "PhoneService": "Yes",
-        "StreamingMovies": "No", "StreamingTV": "No", "TechSupport": "No", "gender": "Female"
+        "MonthlyCharges": 75.5,
+        "SeniorCitizen": 0,
+        "TotalCharges": 1500.0,
+        "tenure": 12,
+        "Contract": "Month-to-month",
+        "Dependents": "No",
+        "DeviceProtection": "No",
+        "InternetService": "DSL",
+        "MultipleLines": "No",
+        "OnlineBackup": "No",
+        "OnlineSecurity": "No",
+        "PaperlessBilling": "Yes",
+        "Partner": "No",
+        "PaymentMethod": "Electronic check",
+        "PhoneService": "Yes",
+        "StreamingMovies": "No",
+        "StreamingTV": "No",
+        "TechSupport": "No",
+        "gender": "Female",
     }
 
     result = predictor.predict_single(customer)
@@ -1071,15 +1203,33 @@ def test_predict_single_includes_threshold_metadata():
 def test_predict_batch_includes_threshold_metadata():
     """predict_batch output includes threshold metadata."""
     import pandas as pd
+
     predictor = ChurnPredictor()
-    X = pd.DataFrame([{
-        "MonthlyCharges": 75.5, "SeniorCitizen": 0, "TotalCharges": 1500.0, "tenure": 12,
-        "Contract": "Month-to-month", "Dependents": "No", "DeviceProtection": "No",
-        "InternetService": "DSL", "MultipleLines": "No", "OnlineBackup": "No",
-        "OnlineSecurity": "No", "PaperlessBilling": "Yes", "Partner": "No",
-        "PaymentMethod": "Electronic check", "PhoneService": "Yes",
-        "StreamingMovies": "No", "StreamingTV": "No", "TechSupport": "No", "gender": "Female"
-    }])
+    X = pd.DataFrame(
+        [
+            {
+                "MonthlyCharges": 75.5,
+                "SeniorCitizen": 0,
+                "TotalCharges": 1500.0,
+                "tenure": 12,
+                "Contract": "Month-to-month",
+                "Dependents": "No",
+                "DeviceProtection": "No",
+                "InternetService": "DSL",
+                "MultipleLines": "No",
+                "OnlineBackup": "No",
+                "OnlineSecurity": "No",
+                "PaperlessBilling": "Yes",
+                "Partner": "No",
+                "PaymentMethod": "Electronic check",
+                "PhoneService": "Yes",
+                "StreamingMovies": "No",
+                "StreamingTV": "No",
+                "TechSupport": "No",
+                "gender": "Female",
+            }
+        ]
+    )
 
     result = predictor.predict_batch(X)
 
@@ -1091,6 +1241,7 @@ def test_predict_batch_includes_threshold_metadata():
 # ============================================================
 # 20. Custom Pipeline Uses Same Instance
 # ============================================================
+
 
 def test_custom_pipeline_uses_same_instance():
     """Custom pipeline passed to ChurnPredictor is shared with DataContract."""
@@ -1105,9 +1256,11 @@ def test_custom_pipeline_uses_same_instance():
 # 21. Phase 11/12/13 Regression
 # ============================================================
 
+
 def test_phase11_business_cost_artifact_unchanged():
     """Phase 11 business cost artifact must remain unchanged."""
     import json
+
     with open("models/business_cost_analysis.json") as f:
         data = json.load(f)
 
@@ -1145,6 +1298,7 @@ def test_phase13_artifacts_unchanged():
 def test_phase11_threshold_artifact_unchanged():
     """Phase 11 threshold artifact must remain 0.28."""
     import json
+
     with open("models/business_cost_analysis.json") as f:
         data = json.load(f)
     assert data["selected_threshold"] == 0.28
@@ -1153,6 +1307,7 @@ def test_phase11_threshold_artifact_unchanged():
 def test_phase8c_model_artifact_unchanged():
     """Phase 8C model artifact must remain unchanged."""
     import joblib
+
     pipeline = joblib.load("models/final_pipeline.joblib")
     model = pipeline.named_steps["model"]
     assert model.n_estimators == 500
@@ -1168,6 +1323,7 @@ def test_phase8c_model_artifact_unchanged():
 # 22. Contract with Custom Pipeline
 # ============================================================
 
+
 def test_contract_with_custom_pipeline():
     """DataContract works with a custom pipeline instance."""
     custom_pipeline = load_pipeline()
@@ -1175,12 +1331,25 @@ def test_contract_with_custom_pipeline():
 
     # Should validate valid input
     input_data = {
-        "MonthlyCharges": 75.5, "SeniorCitizen": 0, "TotalCharges": 1500.0, "tenure": 12,
-        "Contract": "Month-to-month", "Dependents": "No", "DeviceProtection": "No",
-        "InternetService": "DSL", "MultipleLines": "No", "OnlineBackup": "No",
-        "OnlineSecurity": "No", "PaperlessBilling": "Yes", "Partner": "No",
-        "PaymentMethod": "Electronic check", "PhoneService": "Yes",
-        "StreamingMovies": "No", "StreamingTV": "No", "TechSupport": "No", "gender": "Female"
+        "MonthlyCharges": 75.5,
+        "SeniorCitizen": 0,
+        "TotalCharges": 1500.0,
+        "tenure": 12,
+        "Contract": "Month-to-month",
+        "Dependents": "No",
+        "DeviceProtection": "No",
+        "InternetService": "DSL",
+        "MultipleLines": "No",
+        "OnlineBackup": "No",
+        "OnlineSecurity": "No",
+        "PaperlessBilling": "Yes",
+        "Partner": "No",
+        "PaymentMethod": "Electronic check",
+        "PhoneService": "Yes",
+        "StreamingMovies": "No",
+        "StreamingTV": "No",
+        "TechSupport": "No",
+        "gender": "Female",
     }
     result = contract.validate(input_data)
     assert isinstance(result, ValidationResult)
@@ -1189,6 +1358,7 @@ def test_contract_with_custom_pipeline():
 # ============================================================
 # 23. ValidationError Structure
 # ============================================================
+
 
 def test_validation_error_contains_errors():
     """ValidationError contains detailed error list."""
@@ -1205,27 +1375,57 @@ def test_validation_error_contains_errors():
 # 24. Batch Validation
 # ============================================================
 
+
 def test_batch_validation_reports_all_errors(contract):
     """Batch validation reports errors from all rows."""
     import pandas as pd
-    df = pd.DataFrame([
-        {
-            "MonthlyCharges": "invalid", "SeniorCitizen": 0, "TotalCharges": 1500.0, "tenure": 12,
-            "Contract": "Month-to-month", "Dependents": "No", "DeviceProtection": "No",
-            "InternetService": "DSL", "MultipleLines": "No", "OnlineBackup": "No",
-            "OnlineSecurity": "No", "PaperlessBilling": "Yes", "Partner": "No",
-            "PaymentMethod": "Electronic check", "PhoneService": "Yes",
-            "StreamingMovies": "No", "StreamingTV": "No", "TechSupport": "No", "gender": "Female"
-        },
-        {
-            "MonthlyCharges": 80.0, "SeniorCitizen": 0, "TotalCharges": 2000.0, "tenure": 24,
-            "Contract": "One year", "Dependents": "Yes", "DeviceProtection": "Yes",
-            "InternetService": "Fiber optic", "MultipleLines": "Yes", "OnlineBackup": "Yes",
-            "OnlineSecurity": "Yes", "PaperlessBilling": "No", "Partner": "Yes",
-            "PaymentMethod": "Credit card (automatic)", "PhoneService": "Yes",
-            "StreamingMovies": "Yes", "StreamingTV": "Yes", "TechSupport": "Yes", "gender": "Male"
-        }
-    ])
+
+    df = pd.DataFrame(
+        [
+            {
+                "MonthlyCharges": "invalid",
+                "SeniorCitizen": 0,
+                "TotalCharges": 1500.0,
+                "tenure": 12,
+                "Contract": "Month-to-month",
+                "Dependents": "No",
+                "DeviceProtection": "No",
+                "InternetService": "DSL",
+                "MultipleLines": "No",
+                "OnlineBackup": "No",
+                "OnlineSecurity": "No",
+                "PaperlessBilling": "Yes",
+                "Partner": "No",
+                "PaymentMethod": "Electronic check",
+                "PhoneService": "Yes",
+                "StreamingMovies": "No",
+                "StreamingTV": "No",
+                "TechSupport": "No",
+                "gender": "Female",
+            },
+            {
+                "MonthlyCharges": 80.0,
+                "SeniorCitizen": 0,
+                "TotalCharges": 2000.0,
+                "tenure": 24,
+                "Contract": "One year",
+                "Dependents": "Yes",
+                "DeviceProtection": "Yes",
+                "InternetService": "Fiber optic",
+                "MultipleLines": "Yes",
+                "OnlineBackup": "Yes",
+                "OnlineSecurity": "Yes",
+                "PaperlessBilling": "No",
+                "Partner": "Yes",
+                "PaymentMethod": "Credit card (automatic)",
+                "PhoneService": "Yes",
+                "StreamingMovies": "Yes",
+                "StreamingTV": "Yes",
+                "TechSupport": "Yes",
+                "gender": "Male",
+            },
+        ]
+    )
 
     with pytest.raises(ValidationError) as exc_info:
         contract.validate_batch(df)
@@ -1239,27 +1439,57 @@ def test_batch_validation_reports_all_errors(contract):
 # 25. Batch Validation Success
 # ============================================================
 
+
 def test_batch_validation_success(contract):
     """Valid batch passes validation."""
     import pandas as pd
-    df = pd.DataFrame([
-        {
-            "MonthlyCharges": 75.5, "SeniorCitizen": 0, "TotalCharges": 1500.0, "tenure": 12,
-            "Contract": "Month-to-month", "Dependents": "No", "DeviceProtection": "No",
-            "InternetService": "DSL", "MultipleLines": "No", "OnlineBackup": "No",
-            "OnlineSecurity": "No", "PaperlessBilling": "Yes", "Partner": "No",
-            "PaymentMethod": "Electronic check", "PhoneService": "Yes",
-            "StreamingMovies": "No", "StreamingTV": "No", "TechSupport": "No", "gender": "Female"
-        },
-        {
-            "MonthlyCharges": 80.0, "SeniorCitizen": 1, "TotalCharges": 2000.0, "tenure": 24,
-            "Contract": "One year", "Dependents": "Yes", "DeviceProtection": "Yes",
-            "InternetService": "Fiber optic", "MultipleLines": "Yes", "OnlineBackup": "Yes",
-            "OnlineSecurity": "Yes", "PaperlessBilling": "No", "Partner": "Yes",
-            "PaymentMethod": "Credit card (automatic)", "PhoneService": "Yes",
-            "StreamingMovies": "Yes", "StreamingTV": "Yes", "TechSupport": "Yes", "gender": "Male"
-        }
-    ])
+
+    df = pd.DataFrame(
+        [
+            {
+                "MonthlyCharges": 75.5,
+                "SeniorCitizen": 0,
+                "TotalCharges": 1500.0,
+                "tenure": 12,
+                "Contract": "Month-to-month",
+                "Dependents": "No",
+                "DeviceProtection": "No",
+                "InternetService": "DSL",
+                "MultipleLines": "No",
+                "OnlineBackup": "No",
+                "OnlineSecurity": "No",
+                "PaperlessBilling": "Yes",
+                "Partner": "No",
+                "PaymentMethod": "Electronic check",
+                "PhoneService": "Yes",
+                "StreamingMovies": "No",
+                "StreamingTV": "No",
+                "TechSupport": "No",
+                "gender": "Female",
+            },
+            {
+                "MonthlyCharges": 80.0,
+                "SeniorCitizen": 1,
+                "TotalCharges": 2000.0,
+                "tenure": 24,
+                "Contract": "One year",
+                "Dependents": "Yes",
+                "DeviceProtection": "Yes",
+                "InternetService": "Fiber optic",
+                "MultipleLines": "Yes",
+                "OnlineBackup": "Yes",
+                "OnlineSecurity": "Yes",
+                "PaperlessBilling": "No",
+                "Partner": "Yes",
+                "PaymentMethod": "Credit card (automatic)",
+                "PhoneService": "Yes",
+                "StreamingMovies": "Yes",
+                "StreamingTV": "Yes",
+                "TechSupport": "Yes",
+                "gender": "Male",
+            },
+        ]
+    )
 
     result = contract.validate_batch(df)
     assert isinstance(result, ValidationResult)
@@ -1271,9 +1501,11 @@ def test_batch_validation_success(contract):
 # 26. Empty Batch Rejection
 # ============================================================
 
+
 def test_empty_batch_rejected(contract):
     """Empty DataFrame rejected in batch validation."""
     import pandas as pd
+
     df = pd.DataFrame()
 
     with pytest.raises(ValidationError) as exc_info:
@@ -1286,9 +1518,11 @@ def test_empty_batch_rejected(contract):
 # 27. Contract Does Not Fit
 # ============================================================
 
+
 def test_contract_does_not_call_fit():
     """DataContract never calls fit on pipeline or preprocessor."""
     import joblib
+
     pipeline = joblib.load("models/final_pipeline.joblib")
     contract = DataContract(pipeline)
 
@@ -1297,14 +1531,29 @@ def test_contract_does_not_call_fit():
     original_state = model.__getstate__()
 
     # Run validation
-    contract.validate({
-        "MonthlyCharges": 75.5, "SeniorCitizen": 0, "TotalCharges": 1500.0, "tenure": 12,
-        "Contract": "Month-to-month", "Dependents": "No", "DeviceProtection": "No",
-        "InternetService": "DSL", "MultipleLines": "No", "OnlineBackup": "No",
-        "OnlineSecurity": "No", "PaperlessBilling": "Yes", "Partner": "No",
-        "PaymentMethod": "Electronic check", "PhoneService": "Yes",
-        "StreamingMovies": "No", "StreamingTV": "No", "TechSupport": "No", "gender": "Female"
-    })
+    contract.validate(
+        {
+            "MonthlyCharges": 75.5,
+            "SeniorCitizen": 0,
+            "TotalCharges": 1500.0,
+            "tenure": 12,
+            "Contract": "Month-to-month",
+            "Dependents": "No",
+            "DeviceProtection": "No",
+            "InternetService": "DSL",
+            "MultipleLines": "No",
+            "OnlineBackup": "No",
+            "OnlineSecurity": "No",
+            "PaperlessBilling": "Yes",
+            "Partner": "No",
+            "PaymentMethod": "Electronic check",
+            "PhoneService": "Yes",
+            "StreamingMovies": "No",
+            "StreamingTV": "No",
+            "TechSupport": "No",
+            "gender": "Female",
+        }
+    )
 
     # Model state should be unchanged
     assert model.__getstate__() == original_state

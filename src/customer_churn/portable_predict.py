@@ -39,6 +39,7 @@ from .observability import (
 # Portable Data Contract - Schema-driven validation (NO features.py dependency)
 # =============================================================================
 
+
 class PortableValidationError(Exception):
     """Raised when input validation fails at the portable inference boundary."""
 
@@ -51,6 +52,7 @@ class PortableValidationError(Exception):
 @dataclass(frozen=True)
 class PortableValidationResult:
     """Result of successful portable validation."""
+
     validated_data: pd.DataFrame
 
 
@@ -119,13 +121,13 @@ class PortableDataContract:
             if len(data) != 1:
                 raise PortableValidationError(
                     "validate() expects a single-row input. Use validate_batch() for multiple rows.",
-                    ["Input must be a single-row dict or single-row DataFrame"]
+                    ["Input must be a single-row dict or single-row DataFrame"],
                 )
             df = data.copy()
         else:
             raise PortableValidationError(
                 "Input must be a dict or single-row DataFrame",
-                [f"Received {type(data).__name__}"]
+                [f"Received {type(data).__name__}"],
             )
 
         errors = []
@@ -142,7 +144,9 @@ class PortableDataContract:
 
         # Check unexpected fields
         if not missing:
-            unexpected = [col for col in df.columns if col not in self._all_valid_features]
+            unexpected = [
+                col for col in df.columns if col not in self._all_valid_features
+            ]
             if unexpected:
                 errors.append(f"Unexpected fields: {unexpected}")
 
@@ -159,6 +163,8 @@ class PortableDataContract:
 
         # Reorder columns to match preprocessor expectation
         validated_df = df[self._required_features].copy()
+        # Type assertion for pyright
+        assert isinstance(validated_df, pd.DataFrame)
 
         return PortableValidationResult(validated_data=validated_df)
 
@@ -167,11 +173,13 @@ class PortableDataContract:
         if not isinstance(df, pd.DataFrame):
             raise PortableValidationError(
                 "validate_batch() expects a DataFrame",
-                [f"Received {type(df).__name__}"]
+                [f"Received {type(df).__name__}"],
             )
 
         if df.empty:
-            raise PortableValidationError("Empty DataFrame provided", ["Input DataFrame is empty"])
+            raise PortableValidationError(
+                "Empty DataFrame provided", ["Input DataFrame is empty"]
+            )
 
         errors = []
 
@@ -197,8 +205,9 @@ class PortableDataContract:
         for idx, row in df.iterrows():
             row_errors: list[str] = []
             row_series = pd.Series(row)
-            self._validate_numeric_fields(row_series, row_errors, row_idx=idx)
-            self._validate_categorical_fields(row_series, row_errors, row_idx=idx)
+            row_idx: int | None = int(idx) if idx is not None else None  # type: ignore[arg-type]
+            self._validate_numeric_fields(row_series, row_errors, row_idx=row_idx)
+            self._validate_categorical_fields(row_series, row_errors, row_idx=row_idx)
             errors.extend(row_errors)
 
         if errors:
@@ -206,14 +215,13 @@ class PortableDataContract:
 
         # Reorder columns
         validated_df = df[self._required_features].copy()
+        # Type assertion for pyright
+        assert isinstance(validated_df, pd.DataFrame)
 
         return PortableValidationResult(validated_data=validated_df)
 
     def _validate_numeric_fields(
-        self,
-        data: pd.Series,
-        errors: list[str],
-        row_idx: int | None = None
+        self, data: pd.Series, errors: list[str], row_idx: int | None = None
     ) -> None:
         """Validate numeric fields for type, finiteness, and constraints."""
         prefix = f"Row {row_idx}: " if row_idx is not None else ""
@@ -222,7 +230,7 @@ class PortableDataContract:
             val = data[col]
 
             # Check for missing/NaN
-            if pd.isna(val):
+            if pd.isna(val):  # type: ignore[reportGeneralTypeIssues]
                 errors.append(f"{prefix}{col}: missing value")
                 continue
 
@@ -233,11 +241,13 @@ class PortableDataContract:
                 if expected_type == "int":
                     # Reject float representations of integers (e.g., 1.0)
                     if isinstance(val, float) and not val.is_integer():
-                        errors.append(f"{prefix}{col}: expected integer, got float {val}")
+                        errors.append(
+                            f"{prefix}{col}: expected integer, got float {val}"
+                        )
                         continue
-                    val = int(val)
+                    val = int(val)  # type: ignore[arg-type]
                 else:
-                    val = float(val)
+                    val = float(val)  # type: ignore[arg-type]
 
                 if not np.isfinite(val):
                     errors.append(f"{prefix}{col}: non-finite value {val}")
@@ -245,20 +255,23 @@ class PortableDataContract:
 
                 # Constraint checks
                 if "allowed" in constraint and val not in constraint["allowed"]:
-                    errors.append(f"{prefix}{col}: value {val} not in allowed set {constraint['allowed']}")
+                    errors.append(
+                        f"{prefix}{col}: value {val} not in allowed set {constraint['allowed']}"
+                    )
                 if "min" in constraint and val < constraint["min"]:
-                    errors.append(f"{prefix}{col}: value {val} below minimum {constraint['min']}")
+                    errors.append(
+                        f"{prefix}{col}: value {val} below minimum {constraint['min']}"
+                    )
                 if "max" in constraint and val > constraint["max"]:
-                    errors.append(f"{prefix}{col}: value {val} above maximum {constraint['max']}")
+                    errors.append(
+                        f"{prefix}{col}: value {val} above maximum {constraint['max']}"
+                    )
 
             except (ValueError, TypeError):
                 errors.append(f"{prefix}{col}: invalid {expected_type} value {val}")
 
     def _validate_categorical_fields(
-        self,
-        data: pd.Series,
-        errors: list[str],
-        row_idx: int | None = None
+        self, data: pd.Series, errors: list[str], row_idx: int | None = None
     ) -> None:
         """Validate categorical fields against fitted encoder categories."""
         prefix = f"Row {row_idx}: " if row_idx is not None else ""
@@ -267,7 +280,7 @@ class PortableDataContract:
             val = data[col]
 
             # Check for missing/NaN
-            if pd.isna(val) or (isinstance(val, str) and val.strip() == ""):
+            if pd.isna(val) or (isinstance(val, str) and val.strip() == ""):  # type: ignore[reportGeneralTypeIssues]
                 errors.append(f"{prefix}{col}: missing value")
                 continue
 
@@ -288,9 +301,11 @@ class PortableDataContract:
 # Portable Inference Metadata
 # =============================================================================
 
+
 @dataclass(frozen=True)
 class InferenceMetadata:
     """Immutable container for portable inference metadata."""
+
     version: str
     model_type: str
     model_version: str
@@ -323,6 +338,7 @@ class InferenceMetadata:
 # =============================================================================
 # Portable Churn Predictor
 # =============================================================================
+
 
 class PortableChurnPredictor:
     """Portable inference wrapper for the churn prediction model.
@@ -445,7 +461,9 @@ class PortableChurnPredictor:
         """Private inference on already-validated data."""
         return self.pipeline.predict_proba(X_validated)[:, 1]
 
-    def _infer_predict(self, X_validated: pd.DataFrame, threshold: float | None = None) -> np.ndarray:
+    def _infer_predict(
+        self, X_validated: pd.DataFrame, threshold: float | None = None
+    ) -> np.ndarray:
         """Private inference for binary predictions on validated data."""
         proba = self._infer_proba(X_validated)
         thresh = threshold if threshold is not None else self.threshold
@@ -471,7 +489,7 @@ class PortableChurnPredictor:
                 latency_ms = (time.perf_counter() - start_time) * 1000
                 # predict_proba returns probabilities only (no binary labels),
                 # so positive/negative counts are not applicable here.
-                n = len(X) if hasattr(X, '__len__') else 1
+                n = len(X) if hasattr(X, "__len__") else 1
                 self._metrics_collector.record_success(
                     event_type="predict_proba",
                     prediction_count=n,
@@ -485,13 +503,15 @@ class PortableChurnPredictor:
         except Exception:
             if self._metrics_collector is not None:
                 latency_ms = (time.perf_counter() - start_time) * 1000
-                error_category = _categorize_error(sys.exc_info()[1] or Exception("unknown error"))  # type: ignore[arg-type]
+                error_category = _categorize_error(
+                    sys.exc_info()[1] or Exception("unknown error")
+                )  # type: ignore[arg-type]
                 self._metrics_collector.record_failure(
                     event_type="predict_proba",
                     error_category=error_category,
                     threshold=self._threshold,
                     latency_ms=latency_ms,
-                    batch_size=len(X) if hasattr(X, '__len__') else 1,
+                    batch_size=len(X) if hasattr(X, "__len__") else 1,
                 )
             raise
 
@@ -515,8 +535,8 @@ class PortableChurnPredictor:
             pred = self._infer_predict(validated.validated_data, threshold=thresh)
             if self._metrics_collector is not None:
                 latency_ms = (time.perf_counter() - start_time) * 1000
-                n = len(X) if hasattr(X, '__len__') else 1
-                positive = int(pred.sum()) if hasattr(pred, 'sum') else int(pred)
+                n = len(X) if hasattr(X, "__len__") else 1
+                positive = int(pred.sum()) if hasattr(pred, "sum") else int(pred)
                 negative = n - positive
                 self._metrics_collector.record_success(
                     event_type="predict",
@@ -531,13 +551,15 @@ class PortableChurnPredictor:
         except Exception:
             if self._metrics_collector is not None:
                 latency_ms = (time.perf_counter() - start_time) * 1000
-                error_category = _categorize_error(sys.exc_info()[1] or Exception("unknown error"))  # type: ignore[arg-type]
+                error_category = _categorize_error(
+                    sys.exc_info()[1] or Exception("unknown error")
+                )  # type: ignore[arg-type]
                 self._metrics_collector.record_failure(
                     event_type="predict",
                     error_category=error_category,
                     threshold=thresh,
                     latency_ms=latency_ms,
-                    batch_size=len(X) if hasattr(X, '__len__') else 1,
+                    batch_size=len(X) if hasattr(X, "__len__") else 1,
                 )
             raise
 
@@ -577,8 +599,8 @@ class PortableChurnPredictor:
 
             if self._metrics_collector is not None:
                 latency_ms = (time.perf_counter() - start_time) * 1000
-                n = len(X) if hasattr(X, '__len__') else 1
-                positive = int(pred.sum()) if hasattr(pred, 'sum') else int(pred)
+                n = len(X) if hasattr(X, "__len__") else 1
+                positive = int(pred.sum()) if hasattr(pred, "sum") else int(pred)
                 negative = n - positive
                 self._metrics_collector.record_success(
                     event_type="predict_batch",
@@ -594,13 +616,15 @@ class PortableChurnPredictor:
         except Exception:
             if self._metrics_collector is not None:
                 latency_ms = (time.perf_counter() - start_time) * 1000
-                error_category = _categorize_error(sys.exc_info()[1] or Exception("unknown error"))  # type: ignore[arg-type]
+                error_category = _categorize_error(
+                    sys.exc_info()[1] or Exception("unknown error")
+                )  # type: ignore[arg-type]
                 self._metrics_collector.record_failure(
                     event_type="predict_batch",
                     error_category=error_category,
                     threshold=thresh,
                     latency_ms=latency_ms,
-                    batch_size=len(X) if hasattr(X, '__len__') else 1,
+                    batch_size=len(X) if hasattr(X, "__len__") else 1,
                 )
             raise
 
@@ -654,7 +678,9 @@ class PortableChurnPredictor:
         except Exception:
             if self._metrics_collector is not None:
                 latency_ms = (time.perf_counter() - start_time) * 1000
-                error_category = _categorize_error(sys.exc_info()[1] or Exception("unknown error"))  # type: ignore[arg-type]
+                error_category = _categorize_error(
+                    sys.exc_info()[1] or Exception("unknown error")
+                )  # type: ignore[arg-type]
                 self._metrics_collector.record_failure(
                     event_type="predict_single",
                     error_category=error_category,
@@ -678,14 +704,13 @@ def compute_sha256(filepath: Path) -> str:
 # CLI Entry Point
 # =============================================================================
 
+
 def _cli() -> int:
     """Minimal CLI for portable batch inference."""
     import argparse
     import sys
 
-    parser = argparse.ArgumentParser(
-        description="Portable Churn Inference CLI"
-    )
+    parser = argparse.ArgumentParser(description="Portable Churn Inference CLI")
     parser.add_argument(
         "--input",
         type=Path,
@@ -748,11 +773,18 @@ def _cli() -> int:
 
         return 0
 
-    except (FileNotFoundError, ValueError, json.JSONDecodeError, OSError, pd.errors.ParserError) as e:
+    except (
+        FileNotFoundError,
+        ValueError,
+        json.JSONDecodeError,
+        OSError,
+        pd.errors.ParserError,
+    ) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(_cli())

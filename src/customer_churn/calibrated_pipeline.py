@@ -26,12 +26,14 @@ RandomForestClassifier = None  # type: ignore
 
 try:
     from sklearn.ensemble import RandomForestClassifier as _RF
+
     RandomForestClassifier = _RF
 except ImportError:  # pragma: no cover
     pass
 
 # Calibrators will be imported in the training code, but we keep the import
 # optional to avoid circular dependencies for the runtime.
+
 
 @dataclass
 class CalibratedRFClassifier(BaseEstimator):
@@ -66,7 +68,9 @@ class CalibratedRFClassifier(BaseEstimator):
         return (proba >= threshold).astype(int)
 
     def fit(self, *args, **kwargs):  # pragma: no cover
-        raise RuntimeError("CalibratedRFClassifier does not support fitting; use fit on needed components beforehand.")
+        raise RuntimeError(
+            "CalibratedRFClassifier does not support fitting; use fit on needed components beforehand."
+        )
 
     def get_params(self, deep=True):  # pragma: no cover
         # Required for sklearn compatibility; we expose subcomponents.
@@ -77,7 +81,10 @@ class CalibratedRFClassifier(BaseEstimator):
         }
 
     def set_params(self, **params):  # pragma: no cover
-        raise RuntimeError("CalibratedRFClassifier does not allow setting params after construction.")
+        raise RuntimeError(
+            "CalibratedRFClassifier does not allow setting params after construction."
+        )
+
 
 # Utility functions to build/serialise the final artifact
 
@@ -86,6 +93,7 @@ from .calibration import IsotonicProbabilityCalibrator, SigmoidProbabilityCalibr
 CalibratorType = SigmoidProbabilityCalibrator | IsotonicProbabilityCalibrator
 
 # Utility functions to build/serialise the final artifact
+
 
 def build_calibrated_estimator(
     raw_proba_oof: np.ndarray, y_true: np.ndarray, selected_method: str
@@ -104,7 +112,9 @@ def build_calibrated_estimator(
 
     train_df = load_data("train")
     X_train = train_df.drop(columns=[TARGET_COL])
-    y_train = np.asarray(train_df[TARGET_COL].replace({"No": 0, "Yes": 1}).astype(int).values)
+    y_train = np.asarray(
+        train_df[TARGET_COL].replace({"No": 0, "Yes": 1}).astype(int).values
+    )
     # Fit RF on full training
     rf = RandomForestClassifier(**FINAL_RF_CONFIG)  # type: ignore[misc, arg-type]
     rf.fit(preprocessor.fit_transform(X_train), y_train)
@@ -117,6 +127,7 @@ def build_calibrated_estimator(
         raise ValueError("Unknown calibrator method")
     calibrator.fit(raw_proba_oof, y_true)
     return CalibratedRFClassifier(preprocessor, rf, calibrator)
+
 
 # The actual training script will import this function and save the result
 # with joblib.dump after invoking calibration analysis.

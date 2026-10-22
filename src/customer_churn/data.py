@@ -36,9 +36,13 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     df["TotalCharges"] = pd.to_numeric(
         df["TotalCharges"].astype(str).str.strip(), errors="coerce"
     )
-    # Strip whitespace for all object columns
+    # Strip whitespace for all object columns, preserving missing values
     obj_cols = df.select_dtypes(include="object").columns
-    df[obj_cols] = df[obj_cols].apply(lambda s: s.astype(str).str.strip())
+    for col in obj_cols:
+        is_missing = df[col].isna()
+        df[col] = df[col].astype(str).str.strip()
+        df.loc[is_missing, col] = pd.NA
+        df.loc[df[col] == "", col] = pd.NA
     # Drop identifier
     if "customerID" in df.columns:
         df = df.drop(columns=["customerID"])

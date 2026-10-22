@@ -1,10 +1,12 @@
 """Tests for business threshold optimizer - Phase 11."""
 
+import numpy as np
 import pytest
 
 from customer_churn.business_threshold_optimizer import (
     CostMatrix,
     build_business_threshold_grid,
+    compute_business_cost_metrics,
     optimize_threshold_business,
     run_business_optimization,
 )
@@ -154,3 +156,63 @@ class TestBusinessOptimization:
         r2 = optimize_threshold_business(y_true, y_proba, costs)
         assert r1.selected_threshold == r2.selected_threshold
         assert r1.selected_metrics["total_cost"] == r2.selected_metrics["total_cost"]
+
+
+class TestTieBreakingRules:
+    """Tests verifying the exact tie-breaking behavior of _tie_break()."""
+
+    def test_tie_break_fp_gt_fn_chooses_higher_threshold(self):
+        """When FP cost > FN cost and costs tie, prefer higher threshold (rule 2)."""
+        y_true = np.array([0, 0, 0, 1, 1, 1])
+        y_proba = np.array([0.2, 0.4, 0.6, 0.3, 0.5, 0.7])
+        costs = CostMatrix(cost_tn=0, cost_fp=20, cost_fn=10, cost_tp=0)
+        result = optimize_threshold_business(
+            y_true, y_proba, costs, threshold_grid=[0.25, 0.55]
+        )
+        # Verify equal costs explicitly
+        m1 = compute_business_cost_metrics(y_true, y_proba, 0.25, costs)
+        m2 = compute_business_cost_metrics(y_true, y_proba, 0.55, costs)
+        assert m1["total_cost"] == m2["total_cost"] == 40.0
+        assert m1["recall"] == 1.0 and m2["recall"] == 1 / 3
+        assert result.selected_threshold == 0.55
+
+    def test_tie_break_fn_gt_fp_chooses_higher_recall(self):
+        """When FN cost > FP cost and costs tie, prefer higher recall (rule 3)."""
+        y_true = np.array([0, 0, 0, 1, 1, 1])
+        y_proba = np.array([0.2, 0.4, 0.6, 0.3, 0.5, 0.7])
+        costs = CostMatrix(cost_tn=0, cost_fp=10, cost_fn=20, cost_tp=0)
+        result = optimize_threshold_business(
+            y_true, y_proba, costs, threshold_grid=[0.35, 0.65]
+        )
+        m1 = compute_business_cost_metrics(y_true, y_proba, 0.35, costs)
+        m2 = compute_business_cost_metrics(y_true, y_proba, 0.65, costs)
+        assert m1["total_cost"] == m2["total_cost"] == 40.0
+        assert m1["recall"] == 2 / 3 and m2["recall"] == 1 / 3
+        assert result.selected_threshold == 0.35
+
+    def test_tie_break_symmetric_fallback_to_lower_threshold(self):
+        """When costs and recall equal, fallback to lower threshold (rule 4)."""
+        y_true = np.array([0, 1, 0, 1])
+        y_proba = np.array([0.1, 0.9, 0.2, 0.8])
+        costs = CostMatrix(cost_tn=0, cost_fp=10, cost_fn=10, cost_tp=10)
+        result = optimize_threshold_business(
+            y_true, y_proba, costs, threshold_grid=[0.3, 0.5, 0.7]
+        )
+        for t in [0.3, 0.5, 0.7]:
+            m = compute_business_cost_metrics(y_true, y_proba, t, costs)
+            assert m["total_cost"] == 20.0
+            assert m["recall"] == 1.0
+            assert m["fp"] == 0 and m["fn"] == 0 and m["tp"] == 2
+        assert result.selected_threshold == 0.3
+
+    def test_metadata_tie_breaking_rule_matches_implementation(self):
+        """Generated JSON artifact's tie_breaking_rule reflects actual logic."""
+        costs = CostMatrix(cost_tn=0, cost_fp=10, cost_fn=100, cost_tp=10)
+        result = run_business_optimization(costs)
+        rule = result.tie_breaking_rule.lower()
+        assert "minimum total_cost" in rule
+        assert "fp cost > fn cost" in rule
+        assert "higher threshold" in rule
+        assert "fp cost <= fn cost" in rule
+        assert "higher recall" in rule
+        assert "lower threshold" in rule

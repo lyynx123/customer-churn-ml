@@ -82,9 +82,9 @@ This model is **not** suitable for:
 - Yes (churn): 1,869 (26.5%)
 
 **Data split** (stratified, `random_state=42`):
-- Training: 3,451 (70%)
-- Validation: 1,479 (15%)
-- Test: 2,113 (15%)
+- Training: 3,451 (49%)
+- Validation: 1,479 (21%)
+- Test: 2,113 (30%)
 
 **Random seed**: `42` (used throughout)
 
@@ -290,10 +290,10 @@ Actual Yes   151    410
 ## 11. Limitations
 
 1. **Single held-out test split** — no temporal or geographic validation
-2. **No business cost matrix** — threshold selection assumes equal misclassification costs
+2. **Illustrative business cost matrix** — Phase 11 cost assumptions (TN=0, FP=10, FN=100, TP=10) must be validated with real financial inputs
 3. **No temporal validation** — data not evaluated for temporal stability
-4. **No calibration validation** — probability scores not assessed for calibration
-5. **No production monitoring** — no drift detection or performance tracking in place
+4. **Calibration evaluated but not adopted** — Phase 12 evaluated sigmoid/isotonic calibration; sigmoid selected but uncalibrated RF retained for production
+5. **Lightweight in-memory observability only** — Phase 15 `MetricsCollector` provides structured logging; no persistent production monitoring
 6. **Static features** — no temporal/behavioral feature engineering
 7. **Class imbalance** (~26.5% churn) handled via `class_weight='balanced'` only
 8. **Limited interpretability** — Random Forest is less directly interpretable than linear models
@@ -306,9 +306,9 @@ Actual Yes   151    410
 
 The final model is a **Random Forest ensemble** and is less directly interpretable than linear models.
 
-* No SHAP, feature importance, or partial dependence analysis is currently implemented
+* **SHAP explainability implemented (Phase 13)** — TreeExplainer provides global feature importance, grouped original-feature aggregation, and local waterfall explanations for TP/TN/FP/FN
 * Feature importance available via `model.feature_importances_` but not packaged in the inference interface
-* Future work: SHAP explanations, permutation importance, partial dependence plots
+* Future work: permutation importance, partial dependence plots
 
 ---
 
@@ -342,11 +342,11 @@ If documented, explicitly distinguish:
 - REST API (FastAPI/Flask) — Phase 13: NOT REQUIRED
 - Docker containerization — Phase 17: NOT REQUIRED
 - CD/CD deployment — Phase 18: NOT REQUIRED
-- Production monitoring — Not implemented
+- Persistent production monitoring — Not implemented (Phase 15: lightweight in-memory observability only)
 - Model serialization (ONNX) — Future work
 - HTTP API / Docker / CD — Not required per Phase 13/17/18
 
-**No business cost matrix defined** → threshold selection requires stakeholder-defined costs.
+**Business cost matrix defined (Phase 11, illustrative)** — production threshold 0.28 from cost optimization; stakeholder validation required before production use.
 
 ---
 
@@ -427,18 +427,11 @@ Future work (if deployed):
 
 ## 20. Future Improvements
 
-* Business-cost-based threshold optimization **(completed in Phase 11 — production threshold 0.28)**
-* Probability calibration (Platt scaling / isotonic regression)
+* Probability calibration adoption (Platt scaling / isotonic regression)
 * Temporal/rolling validation
-* Model monitoring & drift detection
+* Persistent production monitoring & drift detection
 * Model serialization (ONNX) & inference API
 * Deployment readiness (API/Docker) if deployment target emerges
-* Calibration analysis
-* Temporal validation
-* Model monitoring & drift detection
-* Retraining strategy / CI-CD for model updates
-* Advanced interpretability (SHAP, PDPs) — **implemented in Phase 13**
-* Production monitoring & drift detection
 * Retraining strategy / CI-CD for model updates
 
 ---

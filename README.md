@@ -27,9 +27,9 @@ Telecommunications providers lose significant revenue when customers churn witho
 - Yes (churn): 1,869 (26.5%)
 
 **Data split** (stratified, `random_state=42`):
-- Training: 3,451 (70%)
-- Validation: 1,479 (15%)
-- Test: 2,113 (15%)
+- Training: 3,451 (49%)
+- Validation: 1,479 (21%)
+- Test: 2,113 (30%)
 
 ## Project Structure
 
@@ -71,7 +71,7 @@ The project follows a strict phase-gated methodology to prevent data leakage:
 - Save cleaned parquet to `data/processed/`
 
 ### 2. Train/Validation/Test Split (`split.py`)
-- Stratified 70/15/15 split on `Churn`
+- Stratified 49/21/30 split on `Churn` (70/30 train-test, then 70/30 train-val)
 - `random_state=42`, `shuffle=True`
 - Splits saved as parquet to `data/processed/`
 
@@ -483,19 +483,18 @@ uv run python -m customer_churn.explain
 1. **Single held-out test split** — no temporal or geographic validation
 2. **Illustrative business cost matrix** — TN=0, FP=10, FN=100, TP=10. These assumptions must be validated or replaced with real financial and stakeholder inputs before production use.
 3. **No temporal validation** — data not evaluated for temporal stability
-4. **No calibration analysis** — probability scores not assessed for calibration
-5. **No production monitoring** — no drift detection or performance tracking in place
+4. **Calibration evaluated but not adopted** — Phase 12 evaluated sigmoid/isotonic calibration; sigmoid selected but uncalibrated RF retained for production
+5. **Lightweight in-memory observability only** — Phase 15 `MetricsCollector` provides structured logging; no persistent production monitoring
 6. **Static features** — no temporal/behavioral feature engineering
 7. **Class imbalance** (~26.5% churn) handled via `class_weight='balanced'` only
 
 ## Future Work
 
 - Temporal/rolling validation
-- Probability calibration (Platt scaling / isotonic regression)
-- Model monitoring & drift detection
-- Model serialization (joblib/ONNX)
+- Probability calibration adoption (Platt scaling / isotonic regression)
+- Persistent production monitoring & drift detection
+- Model serialization (ONNX)
 - Experiment tracking (MLflow/Weights & Biases)
-- Feature importance analysis & SHAP explanations
 
 ## License
 

@@ -44,7 +44,12 @@ class OptimizationResult:
     optimization_data_source: str = "OOF (cross-validation on training data)"
     test_set_used_for_optimization: bool = False
     tie_breaking_rule: str = field(
-        default="1. minimum total_cost, 2. higher recall, 3. lower threshold"
+        default=(
+            "1. minimum total_cost; "
+            "2. if tied and FP cost > FN cost: higher threshold; "
+            "3. if tied and FP cost <= FN cost: higher recall; "
+            "4. lower threshold"
+        )
     )
 
 

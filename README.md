@@ -190,36 +190,53 @@ The small generalization gap suggests the model is not overfitting; calibration 
 
 ## Reproducibility
 
-All stochastic components use `random_state=42`:
+Verified stochastic components use `random_state=42`:
 - Data splitting (`train_test_split`)
 - StratifiedKFold CV (`n_splits=5, shuffle=True, random_state=42`)
 - RandomForest, LogisticRegression, DummyClassifier, DecisionTree
 - `RandomizedSearchCV` (hyperparameter search)
 - OOF `cross_val_predict`
 
-`n_jobs=-1` is used only for execution parallelism; it does not affect model determinism.
+A fixed random seed improves reproducibility but does not guarantee bit-for-bit identical results in every environment. `n_jobs=-1` is used only for execution parallelism; it does not affect model determinism.
 
 ## How to Run
 
- ```bash
- # 1. Install dependencies
- uv sync
+```bash
+# 1. Install dependencies
+uv sync
 
- # 2. Run tests
- uv run pytest
+# 2. Run tests
+uv run pytest
 
- # 3. Lint & type-check
- uv run ruff check .
- uv run mypy src
- uv run pyright
+# 3. Lint & type-check
+uv run ruff check .
+uv run mypy src
+uv run pyright
 
- # 4. Run full pipeline (optional — regenerates artifacts)
- uv run python -m customer_churn.split      # Creates train/val/test splits
- uv run python -m customer_churn.models     # Baseline CV comparison
- uv run python -m customer_churn.tune       # Hyperparameter tuning
- uv run python -m customer_churn.threshold  # Phase 8B OOF threshold analysis
- uv run python -m customer_churn.final_evaluation  # Phase 8C final test eval
- ```
+# 4. Data preparation
+uv run python -m customer_churn.data
+
+# 5. Train/validation/test splitting
+uv run python -m customer_churn.split
+
+# 6. Baseline test evaluation
+uv run python -m customer_churn.evaluate
+
+# 7. Final model evaluation
+uv run python -m customer_churn.final_evaluation
+
+# 8. Train and serialize the inference pipeline
+uv run python -m customer_churn.predict
+```
+
+### Entry point distinction:
+- `customer_churn.data` runs the data preparation pipeline.
+- `customer_churn.split` creates the configured data splits.
+- `customer_churn.evaluate` runs the baseline evaluation workflow for simple LogisticRegression and RandomForest models.
+- `customer_churn.final_evaluation` runs the final evaluation workflow for the tuned RandomForest model across multiple threshold candidates.
+- `customer_churn.predict` trains and serializes the inference pipeline and writes its associated metadata. It is not, by itself, the complete evaluation workflow.
+
+Note: Running these commands in sequence does not automatically reproduce every reported result. The evaluation module does not automatically rerun threshold optimization or the separate business-cost analysis.
 
  **Environment**: Python 3.12+, `uv` package manager
 
@@ -482,7 +499,16 @@ uv run python -m customer_churn.explain
 
 ## License
 
-MIT License (or specify project license)
+**Project code license:** A license for this project has not yet been declared. Do not assume that the project is licensed under MIT or another specific license.
+
+### Dataset attribution and licensing
+
+**Source:** Telco Customer Churn dataset (public, IBM/Kaggle).
+The upstream IBM repository releases its code pattern under the **Apache License 2.0**. The dataset CSV's own licensing terms have not been verified. Use neutral attribution until the dataset license is confirmed.
+
+### Model artifact redistribution
+
+Redistribution terms have not been established. Review applicable dataset terms, dependency licenses, and other relevant restrictions before distributing model artifacts.
 
 ---
 

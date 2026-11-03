@@ -35,6 +35,7 @@ def temp_artifacts(artifacts_dir):
             "final_pipeline.joblib",
             "inference_schema.json",
             "inference_metadata.json",
+            "tuned_lr_business_cost_analysis.json",
         ]:
             shutil.copy(artifacts_dir / name, tmpdir / name)
         yield tmpdir
@@ -56,20 +57,22 @@ def test_verify_schema_structure(artifacts_dir):
 
 def test_verify_metadata_threshold(artifacts_dir):
     metadata = verify_metadata_json(artifacts_dir)
-    assert metadata["production_threshold"] == 0.28
-    assert metadata["threshold_metadata"]["value"] == 0.28
+    assert metadata["production_threshold"] == 0.10
+    assert metadata["threshold_metadata"]["value"] == 0.10
     assert metadata["threshold_metadata"]["source_phase"] == "Phase 11"
     assert (
         metadata["threshold_metadata"]["selection_method"]
-        == "Business cost optimization on OOF probabilities"
+        == "Business cost optimization on OOF probabilities (Tuned LogisticRegression)"
     )
 
 
 def test_verify_pipeline_loads(artifacts_dir):
     pipeline = verify_pipeline_loads(artifacts_dir)
     assert pipeline is not None
-    assert pipeline.named_steps["model"].n_estimators == 500
-    assert pipeline.named_steps["model"].max_depth == 10
+    model = pipeline.named_steps["model"]
+    assert model.C == 1.0
+    assert model.solver == "lbfgs"
+    assert model.max_iter == 5000
 
 
 def test_missing_pipeline_fails(temp_artifacts):
@@ -107,6 +110,7 @@ def test_modified_threshold_fails(temp_artifacts):
     meta["threshold_metadata"]["value"] = 0.50
     with open(metadata_path, "w") as f:
         json.dump(meta, f, indent=2)
+    # Only update metadata, not business cost analysis - should cause mismatch
     with pytest.raises(VerificationError, match="production_threshold mismatch"):
         verify_metadata_json(temp_artifacts)
 
@@ -190,7 +194,7 @@ def test_cli_smoke_test(artifacts_dir):
         assert "churn_prediction" in content
         assert "churn_probability" in content
         assert "Predictions saved" in result.stdout
-        assert "Threshold: 0.28" in result.stdout
+        assert "Threshold: 0.1" in result.stdout
     finally:
         if output_path.exists():
             output_path.unlink()

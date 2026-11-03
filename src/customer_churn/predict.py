@@ -14,33 +14,27 @@ from typing import Any
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
 from .contract import DataContract
 from .features import TARGET_COL, build_preprocessor, load_data
 from .models import build_model_pipeline
 
-# Final model configuration (from Phase 8A/8B)
-FINAL_RF_CONFIG = {
-    "n_estimators": 500,
-    "max_depth": 10,
-    "min_samples_split": 2,
-    "min_samples_leaf": 4,
-    "max_features": "sqrt",
-    "class_weight": "balanced",
+# Final model configuration (from Phase 8A - Tuned LogisticRegression)
+FINAL_LR_CONFIG = {
+    "C": 1.0,
+    "solver": "lbfgs",
+    "class_weight": None,
+    "max_iter": 5000,
     "random_state": 42,
-    "n_jobs": -1,
 }
 
-# Threshold candidates from Phase 8B
-THRESHOLD_CANDIDATES = [0.45, 0.50, 0.55, 0.60]
-
-# Default threshold from Phase 11 (business cost optimization on OOF probabilities)
-DEFAULT_THRESHOLD = 0.28
+# Default threshold from Phase 11 (business cost optimization on OOF probabilities for Tuned LR)
+DEFAULT_THRESHOLD = 0.10
 THRESHOLD_METADATA = {
-    "value": 0.28,
-    "selection_method": "Business cost optimization on OOF probabilities",
+    "value": 0.10,
+    "selection_method": "Business cost optimization on OOF probabilities (Tuned LogisticRegression)",
     "source_phase": "Phase 11",
 }
 
@@ -55,19 +49,16 @@ def build_final_pipeline() -> Pipeline:
 
     Returns a fitted sklearn Pipeline containing:
     - preprocessor: ColumnTransformer with numeric imputation + categorical one-hot encoding
-    - model: RandomForestClassifier with tuned hyperparameters
+    - model: LogisticRegression with tuned hyperparameters
 
     The pipeline is NOT fitted - caller must call fit() on training data.
     """
-    model = RandomForestClassifier(
-        n_estimators=500,
-        max_depth=10,
-        min_samples_split=2,
-        min_samples_leaf=4,
-        max_features="sqrt",
-        class_weight="balanced",
+    model = LogisticRegression(
+        C=1.0,
+        solver="lbfgs",
+        class_weight=None,
+        max_iter=5000,
         random_state=42,
-        n_jobs=-1,
     )
     preprocessor = build_preprocessor()
     return build_model_pipeline(model, preprocessor)
@@ -149,7 +140,7 @@ class ChurnPredictor:
                       If None, loads from pipeline_path.
             pipeline_path: Path to serialized pipeline. Used if pipeline is None.
             threshold: Decision threshold for positive class (churn).
-                       Defaults to 0.28 (business cost optimization from Phase 11).
+                       Defaults to 0.27 (business cost optimization from Phase 11).
         """
         if pipeline is not None:
             self.pipeline = pipeline
@@ -314,22 +305,19 @@ def create_model_metadata(
     model = pipeline.named_steps["model"]
 
     return {
-        "model_type": "RandomForestClassifier",
-        "model_version": "1.0",
+        "model_type": "LogisticRegression",
+        "model_version": "2.0",
         "model_parameters": {
-            "n_estimators": model.n_estimators,
-            "max_depth": model.max_depth,
-            "min_samples_split": model.min_samples_split,
-            "min_samples_leaf": model.min_samples_leaf,
-            "max_features": model.max_features,
+            "C": model.C,
+            "solver": model.solver,
             "class_weight": model.class_weight,
+            "max_iter": model.max_iter,
             "random_state": model.random_state,
-            "n_jobs": model.n_jobs,
         },
         "random_state": 42,
         "threshold": {
             "value": threshold,
-            "selection_method": "Business cost optimization on OOF probabilities",
+            "selection_method": "Business cost optimization on OOF probabilities (Tuned LogisticRegression)",
             "source_phase": "Phase 11",
         },
         "training_rows": 3451,

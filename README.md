@@ -74,13 +74,14 @@ The project follows a strict phase-gated methodology to prevent data leakage:
 - Stratified 49/21/30 split on `Churn` (70/30 train-test, then 70/30 train-val)
 - `random_state=42`, `shuffle=True`
 - Splits saved as parquet to `data/processed/`
+- **Validation set (1,479 rows, 21%) is a reserved holdout.** It is created during splitting but is **not consumed by any training, tuning, calibration, threshold selection, or evaluation phase** in the current pipeline. Its future use (e.g., independent calibration fitting, model selection sanity checks, drift detection) has not been assigned. It is not operational monitoring data.
 
 ### 3. Preprocessing Pipeline (`features.py`)
 - **Numeric** (`MonthlyCharges`, `SeniorCitizen`, `TotalCharges`, `tenure`): median imputation
 - **Categorical** (15 columns): most-frequent imputation + OneHotEncoder (`handle_unknown='ignore'`, dense output)
 - Encapsulated in `sklearn.compose.ColumnTransformer`
 - Wrapped in `sklearn.pipeline.Pipeline` with the model
-- **Fitted only on training data**; applied identically to val/test
+- **Fitted only on training data**; applied to test data during inference. Validation data is not used in the pipeline.
 
 ### 4. Baseline Modeling (`models.py`)
 - 5-fold Stratified CV on training data
@@ -113,6 +114,7 @@ The project follows a strict phase-gated methodology to prevent data leakage:
 ### 8. Final Held-Out Test Evaluation (`final_evaluation.py`) — Phase 8C
 - Fit final pipeline on **entire training set** (3,451 samples)
 - Predict on **held-out test set** (2,113 samples)
+- Validation set (1,479 samples) is reserved and unused in this phase.
 - Evaluate 4 predetermined thresholds: 0.45, 0.50, 0.55, 0.60
 - No hyperparameter/threshold tuning on test data
 
@@ -202,8 +204,8 @@ A fixed random seed improves reproducibility but does not guarantee bit-for-bit 
 ## How to Run
 
 ```bash
-# 1. Install dependencies
-uv sync
+# 1. Install dependencies (with dev tools)
+uv sync --extra dev
 
 # 2. Run tests
 uv run pytest
@@ -211,7 +213,7 @@ uv run pytest
 # 3. Lint & type-check
 uv run ruff check .
 uv run mypy src
-uv run pyright
+uv run pyright src
 
 # 4. Data preparation
 uv run python -m customer_churn.data
@@ -227,6 +229,19 @@ uv run python -m customer_churn.final_evaluation
 
 # 8. Train and serialize the inference pipeline
 uv run python -m customer_churn.predict
+
+# 9. Business cost optimization (Phase 11) - selects production threshold
+uv run python -m customer_churn.business_threshold_optimizer
+
+# 10. Probability calibration analysis (Phase 12) - evaluated, not adopted
+uv run python -m customer_churn.calibration
+
+# 11. SHAP explainability (Phase 13)
+uv run python -m customer_churn.explain
+
+# 12. Extract & verify portable inference artifacts (Phase 15)
+uv run python scripts/extract_inference_artifacts.py
+uv run python scripts/verify_inference_artifacts.py --artifacts-dir models
 ```
 
 ### Entry point distinction:
@@ -275,9 +290,9 @@ Note: Running these commands in sequence does not automatically reproduce every 
      "MonthlyCharges": 75.50,
      "TotalCharges": 29.85,
  }
- result = predictor.predict_single(sample)
- # Returns: {'churn_probability': 0.77, 'threshold': 0.28,
- # 'prediction': 1, 'prediction_label': 'Yes', ...}
+result = predictor.predict_single(customer)
+  # Returns: {'churn_probability': 0.64, 'threshold': 0.28,
+  # 'prediction': 1, 'prediction_label': 'Yes', ...}
 
  # Batch prediction
  import pandas as pd
@@ -288,7 +303,7 @@ Note: Running these commands in sequence does not automatically reproduce every 
  # Returns: {'predictions': [...], 'probabilities': [...], 'threshold': 0.28, ...}
 
  # Custom threshold
- result = predictor.predict_single(sample, threshold=0.45)
+ result = predictor.predict_single(customer, threshold=0.45)
  # Returns prediction with custom threshold
  ```
 
@@ -346,16 +361,16 @@ Note: Running these commands in sequence does not automatically reproduce every 
 
  ---
 
- ## Testing & Code Quality
+## Testing & Code Quality
 
- ```bash
- uv run pytest          # 106 tests pass
- uv run ruff check .    # Linting clean
- uv run mypy src tests  # Type checking clean
- uv run pyright         # Type checking clean (main src)
- ```
+```bash
+uv run pytest          # 326 tests pass
+uv run ruff check .    # Linting clean
+uv run mypy src        # Type checking clean (src)
+uv run pyright src     # Type checking clean (src); 55 errors in test files (missing stubs)
+```
 
- **Test coverage**: 106 tests covering data loading, preprocessing, pipeline structure, model configs, threshold optimization, metric correctness, OOF leakage checks, business cost logic, and Phase 14 Data Contract validation.
+**Test coverage**: 326 tests covering data loading, preprocessing, pipeline structure, model configs, threshold optimization, metric correctness, OOF leakage checks, business cost logic, and Phase 14 Data Contract validation.
 
 ---
 

@@ -30,8 +30,16 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     - Convert TotalCharges to numeric (coerce errors)
     - Strip whitespace, replace empty strings with NaN
     - Drop customerID (non‑predictive)
+    - Set TotalCharges=0 for tenure=0 customers with missing charges (no billing history)
     """
     df = df.copy()
+    # Set TotalCharges=0 for tenure=0 customers with missing charges (no billing history).
+    # Only applies if tenure column exists and TotalCharges is missing/whitespace.
+    if "tenure" in df.columns and "TotalCharges" in df.columns:
+        mask = (df["tenure"] == 0) & (df["TotalCharges"].astype(str).str.strip() == "")
+        # Only set string "0" if TotalCharges is object/string dtype (not already numeric)
+        if df["TotalCharges"].dtype == object or pd.api.types.is_string_dtype(df["TotalCharges"].dtype):
+            df.loc[mask, "TotalCharges"] = "0"
     # Replace empty strings in TotalCharges with NaN and coerce
     df["TotalCharges"] = pd.to_numeric(
         df["TotalCharges"].astype(str).str.strip(), errors="coerce"

@@ -91,23 +91,26 @@ def extract_schema_from_pipeline(pipeline_path: Path) -> dict[str, Any]:
 def load_business_metadata() -> dict[str, Any]:
     """Load production threshold and business metadata from Phase 11 artifact.
 
-    The authoritative source for the production threshold is business_cost_analysis.json
-    generated in Phase 11, NOT the stale model_metadata.json.
+    The authoritative source for the production threshold is the business cost analysis
+    for the production model (Tuned LogisticRegression).
     """
     models_dir = Path(__file__).resolve().parents[1] / "models"
-    business_path = models_dir / "business_cost_analysis.json"
+    # Use Tuned LR business cost analysis (production model)
+    business_path = models_dir / "tuned_lr_business_cost_analysis.json"
 
     with open(business_path, "r") as f:
         business_data = json.load(f)
 
+    # Test cost from frozen test evaluation (printed during Phase 11 LR run: $16,510)
+    # OOF total cost from business_metrics
     return {
         "production_threshold": business_data["selected_threshold"],
         "threshold_metadata": {
             "value": business_data["selected_threshold"],
-            "selection_method": "Business cost optimization on OOF probabilities",
+            "selection_method": "Business cost optimization on OOF probabilities (Tuned LogisticRegression)",
             "source_phase": "Phase 11",
             "cost_matrix": business_data["cost_assumptions"],
-            "frozen_test_cost": 16650,
+            "frozen_test_cost": 16510,  # Test cost from Phase 11 LR evaluation
         },
     }
 

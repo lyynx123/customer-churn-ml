@@ -89,5 +89,47 @@ def test_preprocessor_pipeline_compatibility():
     assert X_trans.shape[0] == len(df)
 
 
+def test_tenure_zero_totalcharges_set_to_zero():
+    """Customers with tenure=0 and missing TotalCharges should get TotalCharges=0."""
+    df = pd.DataFrame(
+        {
+            "tenure": [0, 0, 12],
+            "TotalCharges": ["   ", " ", "1000.0"],
+            "MonthlyCharges": [50.0, 60.0, 70.0],
+        }
+    )
+    result = clean_data(df)
+    assert result.loc[0, "TotalCharges"] == 0.0
+    assert result.loc[1, "TotalCharges"] == 0.0
+    assert result.loc[2, "TotalCharges"] == 1000.0
+
+
+def test_tenure_zero_non_missing_totalcharges_preserved():
+    """Customers with tenure=0 and non-missing TotalCharges should keep their value."""
+    df = pd.DataFrame(
+        {
+            "tenure": [0, 0],
+            "TotalCharges": ["500.0", "0.0"],
+            "MonthlyCharges": [50.0, 60.0],
+        }
+    )
+    result = clean_data(df)
+    assert result.loc[0, "TotalCharges"] == 500.0
+    assert result.loc[1, "TotalCharges"] == 0.0
+
+
+def test_tenure_positive_missing_totalcharges_remains_nan():
+    """tenure>0 with missing TotalCharges should remain NaN for median imputation."""
+    df = pd.DataFrame(
+        {
+            "tenure": [12],
+            "TotalCharges": ["   "],
+            "MonthlyCharges": [50.0],
+        }
+    )
+    result = clean_data(df)
+    assert pd.isna(result.loc[0, "TotalCharges"])
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

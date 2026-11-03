@@ -25,9 +25,10 @@ REQUIRED_FILES = [
     "inference_metadata.json",
 ]
 
-EXPECTED_THRESHOLD = 0.28
+# The expected threshold is read from the business cost analysis artifact
+# (authoritative source for production threshold) rather than hardcoded.
 EXPECTED_SOURCE_PHASE = "Phase 11"
-EXPECTED_SELECTION_METHOD = "Business cost optimization on OOF probabilities"
+EXPECTED_SELECTION_METHOD = "Business cost optimization on OOF probabilities (Tuned LogisticRegression)"
 EXPECTED_NUMERIC_FEATURES = [
     "MonthlyCharges",
     "SeniorCitizen",
@@ -142,6 +143,31 @@ def verify_schema_json(artifacts_dir: Path) -> dict[str, Any]:
     return schema
 
 
+def load_expected_threshold(artifacts_dir: Path) -> float:
+    """Load the expected production threshold from the business cost analysis artifact."""
+    # Use Tuned LR business cost analysis (production model)
+    business_path = artifacts_dir / "tuned_lr_business_cost_analysis.json"
+    if not business_path.exists():
+        # Fallback to RF artifact for backward compatibility
+        business_path = artifacts_dir / "business_cost_analysis.json"
+    if not business_path.exists():
+        raise VerificationError(
+            f"Business cost analysis artifact not found: {business_path}. "
+            "Cannot verify production threshold without authoritative source."
+        )
+    try:
+        with open(business_path, "r") as f:
+            business_data = json.load(f)
+    except json.JSONDecodeError as e:
+        raise VerificationError(f"Business cost analysis JSON is not valid JSON: {e}")
+    threshold = business_data.get("selected_threshold")
+    if threshold is None:
+        raise VerificationError(
+            "Business cost analysis missing 'selected_threshold' field."
+        )
+    return float(threshold)
+
+
 def verify_metadata_json(artifacts_dir: Path) -> dict[str, Any]:
     """Verify inference_metadata.json is valid and has correct production config."""
     metadata_path = artifacts_dir / "inference_metadata.json"
@@ -150,6 +176,9 @@ def verify_metadata_json(artifacts_dir: Path) -> dict[str, Any]:
             metadata = json.load(f)
     except json.JSONDecodeError as e:
         raise VerificationError(f"inference_metadata.json is not valid JSON: {e}")
+
+    # Load expected threshold from authoritative source
+    expected_threshold = load_expected_threshold(artifacts_dir)
 
     # Required top-level keys
     required_keys = [
@@ -167,18 +196,18 @@ def verify_metadata_json(artifacts_dir: Path) -> dict[str, Any]:
             raise VerificationError(f"Metadata missing required key: {key}")
 
     # Verify production threshold
-    if metadata["production_threshold"] != EXPECTED_THRESHOLD:
+    if metadata["production_threshold"] != expected_threshold:
         raise VerificationError(
             f"production_threshold mismatch. "
-            f"Expected {EXPECTED_THRESHOLD}, got {metadata['production_threshold']}"
+            f"Expected {expected_threshold}, got {metadata['production_threshold']}"
         )
 
     # Verify threshold_metadata
     tm = metadata["threshold_metadata"]
-    if tm.get("value") != EXPECTED_THRESHOLD:
+    if tm.get("value") != expected_threshold:
         raise VerificationError(
             f"threshold_metadata.value mismatch. "
-            f"Expected {EXPECTED_THRESHOLD}, got {tm.get('value')}"
+            f"Expected {expected_threshold}, got {tm.get('value')}"
         )
     if tm.get("source_phase") != EXPECTED_SOURCE_PHASE:
         raise VerificationError(
@@ -247,21 +276,19 @@ def verify_pipeline_loads(artifacts_dir: Path) -> Pipeline:
     if "model" not in pipeline.named_steps:
         raise VerificationError("Pipeline missing 'model' step")
 
-    # Verify model is RandomForestClassifier
-    from sklearn.ensemble import RandomForestClassifier
+    # Verify model is LogisticRegression (Tuned, Phase 8A)
+    from sklearn.linear_model import LogisticRegression
 
     model = pipeline.named_steps["model"]
-    if not isinstance(model, RandomForestClassifier):
-        raise VerificationError(f"Model is not RandomForestClassifier: {type(model)}")
+    if not isinstance(model, LogisticRegression):
+        raise VerificationError(f"Model is not LogisticRegression: {type(model)}")
 
-    # Verify model hyperparameters match Phase 8C
+    # Verify model hyperparameters match Phase 8A (Tuned LR)
     expected_params = {
-        "n_estimators": 500,
-        "max_depth": 10,
-        "min_samples_split": 2,
-        "min_samples_leaf": 4,
-        "max_features": "sqrt",
-        "class_weight": "balanced",
+        "C": 1.0,
+        "solver": "lbfgs",
+        "class_weight": None,
+        "max_iter": 5000,
         "random_state": 42,
     }
     for param, expected_value in expected_params.items():

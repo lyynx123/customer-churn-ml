@@ -1,18 +1,17 @@
-"""Tests for Phase 9 - Model Serialization & Inference."""
+"""Tests for Phase 9 - Model Serialization & Inference (Tuned LogisticRegression)."""
 
 import json
 
 import numpy as np
 import pytest
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
 from customer_churn.config import RANDOM_SEED
 from customer_churn.features import TARGET_COL, load_data
 from customer_churn.final_evaluation import compute_metrics
 from customer_churn.predict import (
-    FINAL_RF_CONFIG,
-    THRESHOLD_CANDIDATES,
+    FINAL_LR_CONFIG,
     THRESHOLD_METADATA,
     ChurnPredictor,
     build_final_pipeline,
@@ -22,28 +21,20 @@ from customer_churn.predict import (
 )
 
 
-def test_final_rf_config():
-    """Verify the final RandomForest configuration."""
-    assert FINAL_RF_CONFIG["n_estimators"] == 500
-    assert FINAL_RF_CONFIG["max_depth"] == 10
-    assert FINAL_RF_CONFIG["min_samples_split"] == 2
-    assert FINAL_RF_CONFIG["min_samples_leaf"] == 4
-    assert FINAL_RF_CONFIG["max_features"] == "sqrt"
-    assert FINAL_RF_CONFIG["class_weight"] == "balanced"
-    assert FINAL_RF_CONFIG["random_state"] == RANDOM_SEED
-    assert FINAL_RF_CONFIG["n_jobs"] == -1
-
-
-def test_threshold_candidates():
-    """Verify exactly four pre-specified thresholds are evaluated."""
-    assert list(THRESHOLD_CANDIDATES) == [0.45, 0.50, 0.55, 0.60]
+def test_final_lr_config():
+    """Verify the final LogisticRegression configuration."""
+    assert FINAL_LR_CONFIG["C"] == 1.0
+    assert FINAL_LR_CONFIG["solver"] == "lbfgs"
+    assert FINAL_LR_CONFIG["class_weight"] is None
+    assert FINAL_LR_CONFIG["max_iter"] == 5000
+    assert FINAL_LR_CONFIG["random_state"] == RANDOM_SEED
 
 
 def test_final_pipeline_structure():
-    """Verify pipeline contains preprocessing + tuned RandomForest."""
+    """Verify pipeline contains preprocessing + tuned LogisticRegression."""
     pipeline = build_final_pipeline()
     assert isinstance(pipeline, Pipeline)
-    assert isinstance(pipeline.named_steps["model"], RandomForestClassifier)
+    assert isinstance(pipeline.named_steps["model"], LogisticRegression)
     steps = [name for name, _ in pipeline.steps]
     assert "preprocessor" in steps
     assert "model" in steps
@@ -88,7 +79,7 @@ def test_build_final_pipeline_structure():
     steps = [name for name, _ in pipeline.steps]
     assert "preprocessor" in steps
     assert "model" in steps
-    assert isinstance(pipeline.named_steps["model"], RandomForestClassifier)
+    assert isinstance(pipeline.named_steps["model"], LogisticRegression)
 
 
 def test_churn_predictor_initialization():
@@ -102,10 +93,10 @@ def test_churn_predictor_initialization():
 
     # Test with default threshold
     predictor = ChurnPredictor(pipeline=pipeline)
-    assert predictor.threshold == 0.28
+    assert predictor.threshold == 0.10
     assert (
         predictor.threshold_metadata["selection_method"]
-        == "Business cost optimization on OOF probabilities"
+        == "Business cost optimization on OOF probabilities (Tuned LogisticRegression)"
     )
 
     # Test with custom threshold
@@ -136,13 +127,13 @@ def test_predictor_threshold_update():
 
 
 def test_threshold_metadata():
-    """Test threshold metadata structure (Phase 11 business threshold)."""
+    """Test threshold metadata structure (Phase 11 business threshold for Tuned LR)."""
     assert (
         THRESHOLD_METADATA["selection_method"]
-        == "Business cost optimization on OOF probabilities"
+        == "Business cost optimization on OOF probabilities (Tuned LogisticRegression)"
     )
     assert THRESHOLD_METADATA["source_phase"] == "Phase 11"
-    assert THRESHOLD_METADATA["value"] == 0.28
+    assert THRESHOLD_METADATA["value"] == 0.10
 
 
 def test_pipeline_serialization():
@@ -194,17 +185,18 @@ def test_model_metadata_creation():
     y_train = train_df[TARGET_COL].replace({"No": 0, "Yes": 1}).astype(int).values
     pipeline.fit(X_train.iloc[:50], y_train[:50])
 
-    metadata = create_model_metadata(pipeline, threshold=0.55, train_samples=50)
+    metadata = create_model_metadata(pipeline, threshold=0.10, train_samples=50)
 
-    assert metadata["model_type"] == "RandomForestClassifier"
-    assert metadata["model_parameters"]["n_estimators"] == 500
-    assert metadata["model_parameters"]["max_depth"] == 10
-    assert metadata["model_parameters"]["class_weight"] == "balanced"
+    assert metadata["model_type"] == "LogisticRegression"
+    assert metadata["model_parameters"]["C"] == 1.0
+    assert metadata["model_parameters"]["solver"] == "lbfgs"
+    assert metadata["model_parameters"]["class_weight"] is None
+    assert metadata["model_parameters"]["max_iter"] == 5000
     assert metadata["random_state"] == 42
-    assert metadata["threshold"]["value"] == 0.55
+    assert metadata["threshold"]["value"] == 0.10
     assert (
         metadata["threshold"]["selection_method"]
-        == "Business cost optimization on OOF probabilities"
+        == "Business cost optimization on OOF probabilities (Tuned LogisticRegression)"
     )
     assert metadata["threshold"]["source_phase"] == "Phase 11"
     assert metadata["feature_pipeline_included"] is True
@@ -228,18 +220,18 @@ def test_save_model_metadata():
         temp_path = Path(f.name)
 
     try:
-        _ = save_model_metadata(pipeline, temp_path, threshold=0.55)
+        _ = save_model_metadata(pipeline, temp_path, threshold=0.10)
 
         # Verify file was created and contains correct data
         assert temp_path.exists()
         with open(temp_path) as f:
             loaded = json.load(f)
 
-        assert loaded["model_type"] == "RandomForestClassifier"
-        assert loaded["threshold"]["value"] == 0.55
+        assert loaded["model_type"] == "LogisticRegression"
+        assert loaded["threshold"]["value"] == 0.10
         assert (
             loaded["threshold"]["selection_method"]
-            == "Business cost optimization on OOF probabilities"
+            == "Business cost optimization on OOF probabilities (Tuned LogisticRegression)"
         )
     finally:
         temp_path.unlink()
@@ -263,7 +255,7 @@ def test_churn_predictor_predict_proba():
     y_train = train_df[TARGET_COL].replace({"No": 0, "Yes": 1}).astype(int).values
     pipeline.fit(X_train.iloc[:100], y_train[:100])
 
-    predictor = ChurnPredictor(pipeline=pipeline, threshold=0.28)
+    predictor = ChurnPredictor(pipeline=pipeline, threshold=0.10)
 
     # Check methods exist
     assert hasattr(predictor, "predict_proba")

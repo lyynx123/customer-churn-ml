@@ -22,8 +22,8 @@ import numpy as np
 import pandas as pd
 from sklearn.pipeline import Pipeline
 
-# Production threshold from Phase 11 business cost optimization
-PRODUCTION_THRESHOLD = 0.28
+# Production threshold from Phase 11 business cost optimization (Tuned LogisticRegression)
+PRODUCTION_THRESHOLD = 0.10
 
 
 class ValidationError(Exception):

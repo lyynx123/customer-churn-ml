@@ -1,6 +1,8 @@
 # src/customer_churn/__init__.py
 """Customer churn package initialization."""
 
+__version__ = "0.1.0"
+
 from .contract import DataContract, ValidationError, ValidationResult
 from .observability import (
     ErrorCategory,

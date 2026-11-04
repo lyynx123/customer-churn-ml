@@ -12,7 +12,7 @@
 
 **Final Artifact**: `models/final_pipeline.joblib` (includes preprocessing + trained RandomForestClassifier)
 
-**Production Decision Threshold**: `0.28` (selected via Phase 11 business cost optimization on OOF probabilities)
+**Production Decision Threshold**: `0.27` (selected via Phase 11 business cost optimization on OOF probabilities)
 
 > The historical Phase 8B F1-optimal threshold `0.55` is **not** the production threshold. See Section 9 for details.
 
@@ -32,7 +32,7 @@ RandomForestClassifier
     ↓
 churn probability
     ↓
-production decision threshold (≥ 0.28 → churn)
+production decision threshold (≥ 0.27 → churn)
     ↓
 binary prediction (1 = churn / 0 = no churn)
 ```
@@ -171,7 +171,7 @@ Encapsulated in `sklearn.compose.ColumnTransformer` within the serialized `Pipel
 ### Final Model Selection
 - Final model: **Tuned RandomForest** (above config)
 - Trained on **full training set** (3,451 samples)
-- Production threshold: **0.28** (Phase 11 business cost optimization on OOF probabilities; historical Phase 8B F1-optimal threshold was `0.55`)
+- Production threshold: **0.27** (Phase 11 business cost optimization on OOF probabilities; historical Phase 8B F1-optimal threshold was `0.55`)
 - Held-out test evaluation on 2,113 frozen samples
 - No hyperparameter/threshold tuning on test data
 
@@ -225,24 +225,24 @@ The OOF-to-test metric decrease represents an observed generalization gap betwee
 
 ### Production Threshold
 ```text
-0.28
+0.27
 ```
 
-**Selection method**: Phase 11 business cost optimization on OOF probabilities (cost matrix TN=0, FP=10, FN=100, TP=10; frozen-test cost @ 0.28 = $16,650).
+**Selection method**: Phase 11 business cost optimization on OOF probabilities (cost matrix TN=0, FP=10, FN=100, TP=10; frozen-test cost @ 0.27 = $16,740).
 
-**Historical context**: The threshold `0.55` was the F1-optimal candidate in the Phase 8B out-of-fold analysis. It is **not** the production threshold. Production uses `0.28` from Phase 11 business cost optimization.
+**Historical context**: The threshold `0.55` was the F1-optimal candidate in the Phase 8B out-of-fold analysis. It is **not** the production threshold. Production uses `0.27` from Phase 11 business cost optimization.
 
 **Important**: Phase 12 probability calibration was evaluated but **not adopted**. Phase 13 SHAP explainability remains based on the production (uncalibrated) model.
 
 > **Do not describe 0.55 as "best", "optimal for business", or "recommended for production".**
 >
-> Instead: "0.28 is the production threshold from Phase 11 business cost optimization. 0.55 was the historical Phase 8B F1-optimal candidate."
+> Instead: "0.27 is the production threshold from Phase 11 business cost optimization. 0.55 was the historical Phase 8B F1-optimal candidate."
 
 ---
 
 ## 10. Error Analysis
 
-> The following error analysis was conducted in **Phase 10** using the historical Phase 8B F1-optimal threshold `0.55`. Current production uses threshold `0.28` (Phase 11); error rates at the production threshold will differ.
+> The following error analysis was conducted in **Phase 10** using the historical Phase 8B F1-optimal threshold `0.55`. Current production uses threshold `0.27` (Phase 11); error rates at the production threshold will differ.
 
 At threshold `0.55` (test set, historical Phase 10 analysis):
 
@@ -346,7 +346,7 @@ If documented, explicitly distinguish:
 - Model serialization (ONNX) — Future work
 - HTTP API / Docker / CD — Not required per Phase 13/17/18
 
-**Business cost matrix defined (Phase 11, illustrative)** — production threshold 0.28 from cost optimization; stakeholder validation required before production use.
+**Business cost matrix defined (Phase 11, illustrative)** — production threshold 0.27 from cost optimization; stakeholder validation required before production use.
 
 ---
 
@@ -415,10 +415,10 @@ Future work (if deployed):
 
 | Risk | Description |
 |------|-------------|
-| False positives | Historical Phase 10 at 0.55: 332/1552 non-churners flagged (21.4% FPR). Production threshold 0.28 will have different FPR. |
-| False negatives | Historical Phase 10 at 0.55: 151/561 churners missed (26.9% FNR). Production threshold 0.28 will have different FNR. |
+| False positives | Historical Phase 10 at 0.55: 332/1552 non-churners flagged (21.4% FPR). Production threshold 0.27 will have different FPR. |
+| False negatives | Historical Phase 10 at 0.55: 151/561 churners missed (26.9% FNR). Production threshold 0.27 will have different FNR. |
 | Population shift | Model trained on 2020-era Telco data; may not generalize to current populations |
-| Threshold mismatch | Historical threshold 0.55 was F1-optimal, not business-optimal. Production threshold 0.28 is from Phase 11 business cost optimization. |
+| Threshold mismatch | Historical threshold 0.55 was F1-optimal, not business-optimal. Production threshold 0.27 is from Phase 11 business cost optimization. |
 | No calibration | Probabilities not validated as calibrated estimates (Phase 12 evaluated but not adopted) |
 | Temporal drift | No temporal validation; model may degrade over time |
 | Schema drift | New categories in categorical features handled via `handle_unknown='ignore'` but may degrade performance |

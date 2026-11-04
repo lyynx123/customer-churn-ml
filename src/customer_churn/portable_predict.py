@@ -733,7 +733,7 @@ def _cli() -> int:
         "--threshold",
         type=float,
         default=None,
-        help="Override decision threshold (default: 0.28 from metadata)",
+        help="Override decision threshold (default: 0.27 from metadata)",
     )
     parser.add_argument(
         "--no-integrity-check",

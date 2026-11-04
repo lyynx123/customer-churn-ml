@@ -252,7 +252,7 @@ def metrics_context(
     """Context manager for timing and recording inference metrics.
 
     Usage:
-        with metrics_context(collector, "predict_batch", threshold=0.28, batch_size=100):
+        with metrics_context(collector, "predict_batch", threshold=0.27, batch_size=100):
             result = predictor.predict_batch(X)
 
     On success: records prediction counts and latency.

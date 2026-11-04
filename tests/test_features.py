@@ -133,3 +133,34 @@ def test_no_leakage_across_splits(splits):
     # No additional fitting: shapes consistent with original rows
     assert val_trans.shape[0] == val.shape[0]
     assert test_trans.shape[0] == test.shape[0]
+
+
+def test_tenure_zero_totalcharges_zero_after_preprocessing(splits):
+    """Verify tenure=0 rows have TotalCharges=0 after preprocessing pipeline."""
+    preprocessor = build_preprocessor()
+
+    # Fit on train
+    train_trans = preprocess_and_transform("train", preprocessor, fit=True)
+
+    # Check tenure=0 rows in transformed train data
+    # Original tenure column is numeric, should be in num__tenure
+    tenure_col = "num__tenure"
+    tc_col = "num__TotalCharges"
+
+    assert tenure_col in train_trans.columns
+    assert tc_col in train_trans.columns
+
+    tenure_zero_mask = train_trans[tenure_col] == 0
+    tenure_zero_rows = train_trans[tenure_zero_mask]
+
+    if len(tenure_zero_rows) > 0:
+        # All tenure=0 rows should have TotalCharges=0
+        assert (tenure_zero_rows[tc_col] == 0.0).all(), (
+            f"Expected TotalCharges=0 for tenure=0 rows, got: {tenure_zero_rows[tc_col].tolist()}"
+        )
+        # And should not be NaN
+        assert not tenure_zero_rows[tc_col].isna().any()
+
+    # tenure>0 rows with missing TotalCharges should be imputed with median
+    tenure_positive_mask = train_trans[tenure_col] > 0
+    assert (train_trans.loc[tenure_positive_mask, tc_col] > 0).all()

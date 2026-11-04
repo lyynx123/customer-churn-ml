@@ -1143,23 +1143,23 @@ def test_predict_single_validates_once(monkeypatch):
 # ============================================================
 
 
-def test_production_threshold_is_028():
-    """Production threshold must be 0.28 per Phase 11."""
-    assert DEFAULT_THRESHOLD == 0.28
+def test_production_threshold_is_027():
+    """Production threshold must be 0.27 per Phase 11."""
+    assert DEFAULT_THRESHOLD == 0.27
 
 
 def test_threshold_metadata_reflects_phase11():
     """Threshold metadata must reflect Phase 11 business cost optimization."""
-    assert THRESHOLD_METADATA["value"] == 0.28
+    assert THRESHOLD_METADATA["value"] == 0.27
     assert THRESHOLD_METADATA["source_phase"] == "Phase 11"
     assert "business cost" in THRESHOLD_METADATA["selection_method"].lower()
 
 
-def test_churn_predictor_default_threshold_is_028():
-    """ChurnPredictor default threshold is 0.28."""
+def test_churn_predictor_default_threshold_is_027():
+    """ChurnPredictor default threshold is 0.27."""
     predictor = ChurnPredictor()
-    assert predictor.threshold == 0.28
-    assert predictor.threshold_metadata["value"] == 0.28
+    assert predictor.threshold == 0.27
+    assert predictor.threshold_metadata["value"] == 0.27
     assert predictor.threshold_metadata["source_phase"] == "Phase 11"
 
 
@@ -1196,7 +1196,7 @@ def test_predict_single_includes_threshold_metadata():
     result = predictor.predict_single(customer)
 
     assert "threshold_metadata" in result
-    assert result["threshold_metadata"]["value"] == 0.28
+    assert result["threshold_metadata"]["value"] == 0.27
     assert result["threshold_metadata"]["source_phase"] == "Phase 11"
 
 
@@ -1234,7 +1234,7 @@ def test_predict_batch_includes_threshold_metadata():
     result = predictor.predict_batch(X)
 
     assert "threshold_metadata" in result
-    assert result["threshold_metadata"]["value"] == 0.28
+    assert result["threshold_metadata"]["value"] == 0.27
     assert result["threshold_metadata"]["source_phase"] == "Phase 11"
 
 
@@ -1264,7 +1264,7 @@ def test_phase11_business_cost_artifact_unchanged():
     with open("models/business_cost_analysis.json") as f:
         data = json.load(f)
 
-    assert data["selected_threshold"] == 0.28
+    assert data["selected_threshold"] == 0.27
     assert data["cost_assumptions"]["cost_fn"] == 100.0
     assert data["cost_assumptions"]["cost_fp"] == 10.0
     assert data["cost_assumptions"]["cost_tp"] == 10.0
@@ -1296,12 +1296,12 @@ def test_phase13_artifacts_unchanged():
 
 
 def test_phase11_threshold_artifact_unchanged():
-    """Phase 11 threshold artifact must remain 0.28."""
+    """Phase 11 threshold artifact must remain 0.27."""
     import json
 
     with open("models/business_cost_analysis.json") as f:
         data = json.load(f)
-    assert data["selected_threshold"] == 0.28
+    assert data["selected_threshold"] == 0.27
 
 
 def test_phase8c_model_artifact_unchanged():

@@ -449,19 +449,19 @@ Phase 12 probability calibration was evaluated but **not adopted** \u2014 the fr
 **Top global features (original, grouped)**:
 | Original Feature | Mean \|SHAP\| | Mean Signed SHAP |
 |------------------|--------------|------------------|
-| Contract | 0.125 | -0.038 |
-| InternetService | 0.061 | -0.003 |
-| TechSupport | 0.053 | -0.019 |
-| tenure | 0.050 | -0.019 |
-| OnlineSecurity | 0.050 | -0.019 |
+| Contract | 0.116 | -0.010 |
+| InternetService | 0.065 | -0.012 |
+| TechSupport | 0.054 | -0.012 |
+| tenure | 0.054 | -0.009 |
+| OnlineSecurity | 0.050 | -0.011 |
 
 **Local examples (threshold 0.27)**:
 | Sample | Index | P(churn) | Pred | Actual | Top positive contributors |
 |--------|-------|----------|------|--------|---------------------------|
-| TP | 0 | 0.775 | 1 | 1 | Contract_Month-to-month (+0.27), TechSupport_No (+0.08), ... |
-| TN | 1 | 0.044 | 0 | 0 | Contract_Two_year (-0.11), tenure (-0.09), ... |
-| FP | 10 | 0.280 | 1 | 0 | Contract_Month-to-month (+0.15), MonthlyCharges (+0.04), ... |
-| FN | 7 | 0.273 | 0 | 1 | Contract_Two_year (-0.09), TotalCharges (-0.07), ... |
+| TP | 0 | 0.775 | 1 | 1 | Contract_Month-to-month (+0.060), InternetService_Fiber optic (+0.042), PaymentMethod_Electronic check (+0.033), TechSupport_No (+0.025), Contract_Two year (+0.024) |
+| TN | 1 | 0.046 | 0 | 0 | tenure (+0.037), TotalCharges (+0.009), InternetService_DSL (+0.006), OnlineSecurity_Yes (+0.004), TechSupport_Yes (+0.003) |
+| FP | 10 | 0.284 | 1 | 0 | PaymentMethod_Electronic check (+0.039), InternetService_Fiber optic (+0.027), TechSupport_No (+0.021), Contract_Two year (+0.020), InternetService_DSL (+0.012) |
+| FN | 7 | 0.265 | 0 | 1 | Contract_Month-to-month (+0.061), tenure (+0.030), Contract_Two year (+0.026), TotalCharges (+0.011), Contract_One year (+0.009) |
 
 **Reproducible command**:
 ```bash

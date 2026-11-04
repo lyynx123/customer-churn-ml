@@ -52,7 +52,7 @@ from .features import TARGET_COL, load_data
 
 # Production artifact and threshold
 PIPELINE_PATH = Path(__file__).resolve().parents[2] / "models" / "final_pipeline.joblib"
-PRODUCTION_THRESHOLD = 0.28  # Phase 11 business threshold on raw RF probabilities
+PRODUCTION_THRESHOLD = 0.27  # Phase 11 business threshold on raw RF probabilities
 
 # Artifacts directories
 MODELS_DIR = Path(__file__).resolve().parents[2] / "models"
@@ -616,7 +616,7 @@ def build_provenance_metadata(shap_result: ShapExplanationResult) -> dict[str, A
             "random_state": 42,
             "n_jobs": -1,
         },
-        "business_threshold": 0.28,
+        "business_threshold": 0.27,
         "output_space": "probability (positive-class output from tree_path_dependent SHAP)",
         "positive_class": "Yes",
         "positive_class_index": 1,

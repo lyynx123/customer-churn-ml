@@ -390,7 +390,7 @@ def test_artifact_schema_sanity():
     assert meta["phase12_calibrated_model_explained"] is False
     assert meta["output_space"].startswith("probability")
     assert meta["positive_class"] == "Yes"
-    assert meta["business_threshold"] == 0.28
+    assert meta["business_threshold"] == 0.27
 
 
 # ============================================================

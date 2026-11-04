@@ -37,9 +37,9 @@ FINAL_RF_CONFIG = {
 THRESHOLD_CANDIDATES = [0.45, 0.50, 0.55, 0.60]
 
 # Default threshold from Phase 11 (business cost optimization on OOF probabilities)
-DEFAULT_THRESHOLD = 0.28
+DEFAULT_THRESHOLD = 0.27
 THRESHOLD_METADATA = {
-    "value": 0.28,
+    "value": 0.27,
     "selection_method": "Business cost optimization on OOF probabilities",
     "source_phase": "Phase 11",
 }
@@ -149,7 +149,7 @@ class ChurnPredictor:
                       If None, loads from pipeline_path.
             pipeline_path: Path to serialized pipeline. Used if pipeline is None.
             threshold: Decision threshold for positive class (churn).
-                       Defaults to 0.28 (business cost optimization from Phase 11).
+                       Defaults to 0.27 (business cost optimization from Phase 11).
         """
         if pipeline is not None:
             self.pipeline = pipeline

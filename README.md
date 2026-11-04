@@ -141,34 +141,34 @@ Phase 8B OOF analysis identified four candidate thresholds:
 
 | Threshold | Role | OOF Precision | OOF Recall | OOF F1 |
 |-----------|------|---------------|------------|--------|
-| 0.45      | Recall-oriented (Prec ≥ 0.50) | 0.5127 | 0.8144 | 0.6293 |
-| 0.50      | Default reference | 0.5334 | 0.7664 | 0.6290 |
-| 0.55      | F1-optimal (OOF) | 0.5657 | 0.7238 | 0.6351 |
-| 0.60      | Precision-oriented (Rec ≥ 0.60) | 0.5921 | 0.6561 | 0.6225 |
+| 0.45      | Recall-oriented (Prec ≥ 0.50) | 0.5114 | 0.8100 | 0.6270 |
+| 0.50      | Default reference | 0.5331 | 0.7653 | 0.6284 |
+| 0.55      | F1-optimal (OOF) | 0.5635 | 0.7216 | 0.6328 |
+| 0.60      | Precision-oriented (Rec ≥ 0.60) | 0.5925 | 0.6572 | 0.6232 |
 
 ## Final Test Results (Phase 8C)
 
 ### Model-Level Metrics
 | Metric | Test Value |
 |--------|------------|
-| **ROC-AUC** | 0.8390 |
-| **PR-AUC** | 0.6398 |
+| **ROC-AUC** | 0.8388 |
+| **PR-AUC** | 0.6391 |
 
 ### Threshold Evaluation (Held-Out Test Set)
 
 | Threshold | Precision | Recall | F1 | Accuracy | FPR | FNR | Pos Rate | TN | FP | FN | TP |
 |-----------|-----------|--------|----|----------|-----|-----|----------|----|----|----|----|
-| 0.45      | 0.5049    | 0.8235 | 0.6260 | 0.7388 | 0.2919 | 0.1765 | 0.4330 | 1099 | 453 | 99 | 462 |
-| 0.50      | 0.5234    | 0.7772 | 0.6255 | 0.7530 | 0.2558 | 0.2228 | 0.3942 | 1155 | 397 | 125 | 436 |
-| 0.55      | 0.5526    | 0.7308 | 0.6293 | 0.7714 | 0.2139 | 0.2692 | 0.3512 | 1220 | 332 | 151 | 410 |
-| 0.60      | 0.5684    | 0.6595 | 0.6106 | 0.7766 | 0.1811 | 0.3405 | 0.3081 | 1271 | 281 | 191 | 370 |
+| 0.45      | 0.5038    | 0.8235 | 0.6252 | 0.7378 | 0.2932 | 0.1765 | 0.4340 | 1097 | 455 | 99 | 462 |
+| 0.50      | 0.5224    | 0.7701 | 0.6225 | 0.7520 | 0.2545 | 0.2299 | 0.3914 | 1157 | 395 | 129 | 432 |
+| 0.55      | 0.5521    | 0.7273 | 0.6277 | 0.7709 | 0.2133 | 0.2727 | 0.3497 | 1221 | 331 | 153 | 408 |
+| 0.60      | 0.5706    | 0.6631 | 0.6134 | 0.7780 | 0.1804 | 0.3369 | 0.3086 | 1272 | 280 | 189 | 372 |
 
 ### OOF vs. Test Generalization
 
 | Metric | Phase 8B (OOF) | Phase 8C (Test) | Δ |
 |--------|----------------|-----------------|---|
-| ROC-AUC | 0.8481 | 0.8390 | -0.009 |
-| PR-AUC | 0.6678 | 0.6398 | -0.028 |
+| ROC-AUC | 0.8477 | 0.8388 | -0.009 |
+| PR-AUC | 0.6671 | 0.6391 | -0.028 |
 
 The small generalization gap suggests the model is not overfitting; calibration was not independently validated.
 
@@ -250,8 +250,8 @@ Note: Running these commands in sequence does not automatically reproduce every 
  # Load the trained pipeline
  pipeline = load_pipeline()
 
- # Create predictor with default threshold (0.28, business cost optimization from Phase 11)
- predictor = ChurnPredictor()
+# Create predictor with default threshold (0.27, business cost optimization from Phase 11)
+  predictor = ChurnPredictor()
 
  # Single prediction
  customer = {
@@ -275,17 +275,17 @@ Note: Running these commands in sequence does not automatically reproduce every 
      "MonthlyCharges": 75.50,
      "TotalCharges": 29.85,
  }
- result = predictor.predict_single(sample)
- # Returns: {'churn_probability': 0.77, 'threshold': 0.28,
- # 'prediction': 1, 'prediction_label': 'Yes', ...}
+result = predictor.predict_single(sample)
+  # Returns: {'churn_probability': 0.77, 'threshold': 0.27,
+  # 'prediction': 1, 'prediction_label': 'Yes', ...}
 
  # Batch prediction
  import pandas as pd
 
  test_df = pd.read_parquet("data/processed/test.parquet")
  X_test = test_df.drop(columns=["Churn"])
- result = predictor.predict_batch(X_test.iloc[:10])
- # Returns: {'predictions': [...], 'probabilities': [...], 'threshold': 0.28, ...}
+result = predictor.predict_batch(X_test.iloc[:10])
+  # Returns: {'predictions': [...], 'probabilities': [...], 'threshold': 0.27, ...}
 
  # Custom threshold
  result = predictor.predict_single(sample, threshold=0.45)
@@ -320,20 +320,20 @@ Note: Running these commands in sequence does not automatically reproduce every 
  ```bash
  uv run python -m customer_churn.business_threshold_optimizer
  ```
- Running the optimization with the illustrative cost matrix (FN=100, FP=10, TP=10, TN=0) yields:
+Running the optimization with the illustrative cost matrix (FN=100, FP=10, TP=10, TN=0) yields:
 
- - **OOF‑optimal business threshold:** `0.28`
- - **OOF Metrics (at 0.28):**
-   - `TN=1407, FP=1128, FN=69, TP=847`
-   - `Precision = 0.42886, Recall = 0.92467, F1 = 0.58596, Accuracy = 0.65314`
-   - `Total expected cost = $26,650`
-   - `Average cost per customer = $7.72`
+- **OOF‑optimal business threshold:** `0.27`
+- **OOF Metrics (at 0.27):**
+  - `TN=1379, FP=1156, FN=65, TP=851`
+  - `Precision = 0.4240, Recall = 0.9290, F1 = 0.5823, Accuracy = 0.6462`
+  - `Total expected cost = $26,570`
+  - `Average cost per customer = $7.70`
 
- - **Frozen‑test evaluation (at 0.28):**
-   - `TN=862, FP=690, FN=46, TP=515`
-   - `Precision = 0.4274, Recall = 0.9180, F1 = 0.5832, Accuracy = 0.6517`
-   - `Total cost = $16,650`
-   - `Average cost per customer = $7.88`
+- **Frozen‑test evaluation (at 0.27):**
+  - `TN=835, FP=717, FN=44, TP=517`
+  - `Precision = 0.4190, Recall = 0.9216, F1 = 0.5760, Accuracy = 0.6398`
+  - `Total cost = $16,740`
+  - `Average cost per customer = $7.92`
 
  **Artifacts generated**
  - `models/business_cost_analysis.json` – machine‑readable summary of the optimisation and test evaluation.
@@ -378,7 +378,7 @@ Existing Production Pipeline
    \u2193
 P(Churn=Yes)
    \u2193
-Production Threshold = 0.28
+Production Threshold = 0.27
    \u2193
 Prediction
 ```
@@ -407,11 +407,11 @@ The production model expects exactly **19 features**:
 - **Schema source**: Categorical domains are derived from the fitted production pipeline's `OneHotEncoder`, not hardcoded
 - **Pipeline instance**: The DataContract uses the *exact same* fitted pipeline instance as `ChurnPredictor` \u2014 no second model is loaded
 
-### Production threshold: `0.28`
+### Production threshold: `0.27`
 
-The production decision threshold is **0.28**, selected in Phase 11 via business cost optimization (OOF probabilities). This is the default for `ChurnPredictor`.
+The production decision threshold is **0.27**, selected in Phase 11 via business cost optimization (OOF probabilities). This is the default for `ChurnPredictor`.
 
-Phase 12 probability calibration was evaluated but **not adopted** \u2014 the frozen-test business cost at 0.28 is `$16,650` (TN=862, FP=690, FN=46, TP=515).
+Phase 12 probability calibration was evaluated but **not adopted** \u2014 the frozen-test business cost at 0.27 is `$16,740` (TN=835, FP=717, FN=44, TP=517).
 
 ---
 
@@ -440,7 +440,7 @@ Phase 12 probability calibration was evaluated but **not adopted** \u2014 the fr
 | Global importance (transformed) | `models/shap_global_importance.csv` | 45 features ranked by mean \|SHAP\| |
 | Global importance (original grouped) | `models/shap_grouped_importance.csv` | 19 original features aggregated (sum of \|SHAP\| avoids one-hot cancellation) |
 | Feature mapping | `models/shap_feature_mapping.json` | Transformed → original feature mapping |
-| Local explanations | `models/shap_local_explanations.json` | TP/TN/FP/FN waterfall data (threshold 0.28) |
+| Local explanations | `models/shap_local_explanations.json` | TP/TN/FP/FN waterfall data (threshold 0.27) |
 | Provenance metadata | `models/shap_provenance.json` | Model config, SHAP version, background/explanation sources, leakage note |
 | Summary plot | `notebooks/figures/shap_summary.png` | Beeswarm plot (top 20 features) |
 | Bar plot | `notebooks/figures/shap_bar.png` | Top 20 mean \|SHAP\| |
@@ -449,19 +449,19 @@ Phase 12 probability calibration was evaluated but **not adopted** \u2014 the fr
 **Top global features (original, grouped)**:
 | Original Feature | Mean \|SHAP\| | Mean Signed SHAP |
 |------------------|--------------|------------------|
-| Contract | 0.125 | -0.038 |
-| InternetService | 0.061 | -0.003 |
-| TechSupport | 0.053 | -0.019 |
-| tenure | 0.050 | -0.019 |
-| OnlineSecurity | 0.050 | -0.019 |
+| Contract | 0.116 | -0.010 |
+| InternetService | 0.065 | -0.012 |
+| TechSupport | 0.054 | -0.012 |
+| tenure | 0.054 | -0.009 |
+| OnlineSecurity | 0.050 | -0.011 |
 
-**Local examples (threshold 0.28)**:
+**Local examples (threshold 0.27)**:
 | Sample | Index | P(churn) | Pred | Actual | Top positive contributors |
 |--------|-------|----------|------|--------|---------------------------|
-| TP | 0 | 0.775 | 1 | 1 | Contract_Month-to-month (+0.27), TechSupport_No (+0.08), ... |
-| TN | 1 | 0.044 | 0 | 0 | Contract_Two_year (-0.11), tenure (-0.09), ... |
-| FP | 10 | 0.280 | 1 | 0 | Contract_Month-to-month (+0.15), MonthlyCharges (+0.04), ... |
-| FN | 7 | 0.273 | 0 | 1 | Contract_Two_year (-0.09), TotalCharges (-0.07), ... |
+| TP | 0 | 0.775 | 1 | 1 | Contract_Month-to-month (+0.060), InternetService_Fiber optic (+0.042), PaymentMethod_Electronic check (+0.033), TechSupport_No (+0.025), Contract_Two year (+0.024) |
+| TN | 1 | 0.046 | 0 | 0 | tenure (+0.037), TotalCharges (+0.009), InternetService_DSL (+0.006), OnlineSecurity_Yes (+0.004), TechSupport_Yes (+0.003) |
+| FP | 10 | 0.284 | 1 | 0 | PaymentMethod_Electronic check (+0.039), InternetService_Fiber optic (+0.027), TechSupport_No (+0.021), Contract_Two year (+0.020), InternetService_DSL (+0.012) |
+| FN | 7 | 0.265 | 0 | 1 | Contract_Month-to-month (+0.061), tenure (+0.030), Contract_Two year (+0.026), TotalCharges (+0.011), Contract_One year (+0.009) |
 
 **Reproducible command**:
 ```bash

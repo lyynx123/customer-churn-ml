@@ -102,7 +102,7 @@ def test_churn_predictor_initialization():
 
     # Test with default threshold
     predictor = ChurnPredictor(pipeline=pipeline)
-    assert predictor.threshold == 0.28
+    assert predictor.threshold == 0.27
     assert (
         predictor.threshold_metadata["selection_method"]
         == "Business cost optimization on OOF probabilities"
@@ -142,7 +142,7 @@ def test_threshold_metadata():
         == "Business cost optimization on OOF probabilities"
     )
     assert THRESHOLD_METADATA["source_phase"] == "Phase 11"
-    assert THRESHOLD_METADATA["value"] == 0.28
+    assert THRESHOLD_METADATA["value"] == 0.27
 
 
 def test_pipeline_serialization():
@@ -263,7 +263,7 @@ def test_churn_predictor_predict_proba():
     y_train = train_df[TARGET_COL].replace({"No": 0, "Yes": 1}).astype(int).values
     pipeline.fit(X_train.iloc[:100], y_train[:100])
 
-    predictor = ChurnPredictor(pipeline=pipeline, threshold=0.28)
+    predictor = ChurnPredictor(pipeline=pipeline, threshold=0.27)
 
     # Check methods exist
     assert hasattr(predictor, "predict_proba")

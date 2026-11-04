@@ -23,7 +23,7 @@ import pandas as pd
 from sklearn.pipeline import Pipeline
 
 # Production threshold from Phase 11 business cost optimization
-PRODUCTION_THRESHOLD = 0.28
+PRODUCTION_THRESHOLD = 0.27
 
 
 class ValidationError(Exception):

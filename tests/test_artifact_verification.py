@@ -56,8 +56,8 @@ def test_verify_schema_structure(artifacts_dir):
 
 def test_verify_metadata_threshold(artifacts_dir):
     metadata = verify_metadata_json(artifacts_dir)
-    assert metadata["production_threshold"] == 0.28
-    assert metadata["threshold_metadata"]["value"] == 0.28
+    assert metadata["production_threshold"] == 0.27
+    assert metadata["threshold_metadata"]["value"] == 0.27
     assert metadata["threshold_metadata"]["source_phase"] == "Phase 11"
     assert (
         metadata["threshold_metadata"]["selection_method"]
@@ -190,7 +190,7 @@ def test_cli_smoke_test(artifacts_dir):
         assert "churn_prediction" in content
         assert "churn_probability" in content
         assert "Predictions saved" in result.stdout
-        assert "Threshold: 0.28" in result.stdout
+        assert "Threshold: 0.27" in result.stdout
     finally:
         if output_path.exists():
             output_path.unlink()

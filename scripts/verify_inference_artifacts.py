@@ -25,7 +25,7 @@ REQUIRED_FILES = [
     "inference_metadata.json",
 ]
 
-EXPECTED_THRESHOLD = 0.28
+EXPECTED_THRESHOLD = 0.27
 EXPECTED_SOURCE_PHASE = "Phase 11"
 EXPECTED_SELECTION_METHOD = "Business cost optimization on OOF probabilities"
 EXPECTED_NUMERIC_FEATURES = [

@@ -517,13 +517,13 @@ class TestOOFGeneration:
 class TestPhase11Regression:
     """Ensure Phase 11 artifacts and logic remain unchanged."""
 
-    def test_phase11_threshold_unchanged(self):
-        """Phase 11 business threshold 0.28 must remain in its artifact."""
+    def test_phase11_threshold_updated(self):
+        """Phase 11 business threshold updated to 0.27 after TotalCharges fix."""
         import json
 
         with open("models/business_cost_analysis.json") as f:
             data = json.load(f)
-        assert data["selected_threshold"] == 0.28
+        assert data["selected_threshold"] == 0.27
 
     def test_phase11_cost_matrix_unchanged(self):
         """Phase 11 cost matrix must remain unchanged."""
@@ -567,7 +567,7 @@ class TestCalibratedBusinessThreshold:
         assert "total_cost" in result.selected_metrics
 
     def test_calibrated_threshold_differs_from_phase11(self):
-        """Calibrated threshold should generally differ from Phase 11 (0.28)."""
+        """Calibrated threshold should generally differ from Phase 11 (0.27)."""
         results = run_calibration_analysis()
         selected_method = results["selected_method"]
 

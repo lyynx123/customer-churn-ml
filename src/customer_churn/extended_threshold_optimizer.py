@@ -24,6 +24,7 @@ from .extended_business_cost import (
     ExtendedBusinessCostResult,
     ExtendedCostMatrix,
     baseline_costs,
+    build_default_extended_cost_matrix,
     compute_extended_business_cost_metrics,
     validate_extended_costs,
 )
@@ -598,7 +599,7 @@ def run_phase11_extended(
         4. Save all artifacts.
 
     Args:
-        costs: Optional ExtendedCostMatrix. Defaults to r=0.5, clv=100, int=10.
+        costs: Optional ExtendedCostMatrix. Defaults to r=1.0, clv=100, int=10 (reproduces Phase 11).
         output_dir: Output directory for artifacts. Defaults to models/.
         sensitivity_config: Optional dict with keys retention_rates, clv_values,
             intervention_costs for sensitivity analysis.
@@ -607,15 +608,7 @@ def run_phase11_extended(
         Dictionary with all results and artifact paths.
     """
     if costs is None:
-        costs = ExtendedCostMatrix(
-            cost_tn=0.0,
-            cost_fp=10.0,
-            cost_fn=100.0,
-            cost_intervention=10.0,
-            retention_success_rate=0.5,
-            clv=100.0,
-            label="extended default: r=0.5, clv=100, int=10",
-        )
+        costs = build_default_extended_cost_matrix()
 
     if output_dir is None:
         output_dir = Path(__file__).resolve().parents[2] / "models"

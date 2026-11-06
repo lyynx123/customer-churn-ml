@@ -19,7 +19,7 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 
-from .config import RANDOM_SEED
+from .config import BASE_DIR, RANDOM_SEED
 from .features import TARGET_COL, build_preprocessor, load_data
 from .models import build_model_pipeline
 
@@ -264,11 +264,13 @@ if __name__ == "__main__":
             print(f"  {name}: Not available")
 
     # Save artifacts
-    output_path = "/home/ahmad_izzuddin_ulinnuha/projects/Customer_Churn/models/threshold_analysis.json"
-    save_analysis_results(results, optimal, output_path)
+    output_path = BASE_DIR / "models" / "threshold_analysis.json"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    save_analysis_results(results, optimal, str(output_path))
 
-    figure_path = "/home/ahmad_izzuddin_ulinnuha/projects/Customer_Churn/notebooks/figures/threshold_analysis_cv.png"
-    plot_threshold_curves(results, figure_path)
+    figure_path = BASE_DIR / "notebooks" / "figures" / "threshold_analysis_cv.png"
+    figure_path.parent.mkdir(parents=True, exist_ok=True)
+    plot_threshold_curves(results, str(figure_path))
 
     print("\nArtifacts saved:")
     print(f"  JSON: {output_path}")

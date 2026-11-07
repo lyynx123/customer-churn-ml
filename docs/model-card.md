@@ -208,7 +208,7 @@ Encapsulated in `sklearn.compose.ColumnTransformer` within the serialized `Pipel
 | ROC-AUC | 0.8481 | 0.8390 | -0.009 |
 | PR-AUC | 0.6678 | 0.6398 | -0.028 |
 
-The OOF-to-test metric decrease represents an observed generalization gap between out-of-fold validation estimates and the frozen held-out test evaluation. Calibration was not evaluated in this project.
+The OOF-to-test metric decrease represents an observed generalization gap between out-of-fold validation estimates and the frozen held-out test evaluation. Calibration was evaluated in Phase 12 (cross-fitted sigmoid vs isotonic on OOF probabilities); sigmoid was selected (log_loss=0.4138 vs 0.4360, brier=0.1344 vs 0.1353) but the calibrated model was not adopted for production. The production model remains the uncalibrated RandomForest.
 
 ---
 
@@ -237,6 +237,8 @@ The OOF-to-test metric decrease represents an observed generalization gap betwee
 > **Do not describe 0.55 as "best", "optimal for business", or "recommended for production".**
 >
 > Instead: "0.27 is the production threshold from Phase 11 business cost optimization. 0.55 was the historical Phase 8B F1-optimal candidate."
+
+For the full decision rationale comparing RandomForest vs LogisticRegression, see [Model Selection Decision](docs/model-selection.md).
 
 ---
 
@@ -419,7 +421,7 @@ Future work (if deployed):
 | False negatives | Historical Phase 10 at 0.55: 151/561 churners missed (26.9% FNR). Production threshold 0.27 will have different FNR. |
 | Population shift | Model trained on 2020-era Telco data; may not generalize to current populations |
 | Threshold mismatch | Historical threshold 0.55 was F1-optimal, not business-optimal. Production threshold 0.27 is from Phase 11 business cost optimization. |
-| No calibration | Probabilities not validated as calibrated estimates (Phase 12 evaluated but not adopted) |
+| No calibration | Probabilities not calibrated; Phase 12 evaluated sigmoid/isotonic on OOF (sigmoid log_loss=0.4138, brier=0.1344) but uncalibrated RF retained for production |
 | Temporal drift | No temporal validation; model may degrade over time |
 | Schema drift | New categories in categorical features handled via `handle_unknown='ignore'` but may degrade performance |
 

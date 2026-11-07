@@ -349,13 +349,15 @@ Running the optimization with the illustrative cost matrix (FN=100, FP=10, TP=10
  ## Testing & Code Quality
 
  ```bash
- uv run pytest          # 106 tests pass
+ uv run pytest          # 394 tests pass
  uv run ruff check .    # Linting clean
- uv run mypy src tests  # Type checking clean
- uv run pyright         # Type checking clean (main src)
+ uv run mypy src        # Type checking clean
+ uv run pyright src     # Type checking clean (main src)
  ```
 
- **Test coverage**: 106 tests covering data loading, preprocessing, pipeline structure, model configs, threshold optimization, metric correctness, OOF leakage checks, business cost logic, and Phase 14 Data Contract validation.
+ **Test coverage**: 394 tests covering data loading, preprocessing, pipeline structure, model configs, threshold optimization, metric correctness, OOF leakage checks, business cost logic, Phase 14 Data Contract validation, and extended business cost modeling.
+
+ See [Model Selection Decision](docs/model-selection.md) for the RF vs LR decision rationale and cost assumptions.
 
 ---
 

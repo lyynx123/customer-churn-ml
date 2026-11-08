@@ -50,9 +50,9 @@ from numpy.typing import NDArray
 from .config import RANDOM_SEED
 from .features import TARGET_COL, load_data
 
-# Production artifact and threshold
+# Production artifact and threshold (HISTORICAL: Phase 8C RandomForest)
 PIPELINE_PATH = Path(__file__).resolve().parents[2] / "models" / "final_pipeline.joblib"
-PRODUCTION_THRESHOLD = 0.28  # Phase 11 business threshold on raw RF probabilities
+HISTORICAL_RF_THRESHOLD = 0.27  # Phase 11 business threshold on raw RF probabilities
 
 # Artifacts directories
 MODELS_DIR = Path(__file__).resolve().parents[2] / "models"
@@ -419,7 +419,7 @@ def select_local_examples(
     X_explain: NDArray[np.float64],
     y_true: NDArray[np.int_],
     predictions: NDArray[np.float64],
-    threshold: float = PRODUCTION_THRESHOLD,
+    threshold: float = HISTORICAL_RF_THRESHOLD,
     feature_values: NDArray[np.float64] | None = None,
 ) -> dict[str, int]:
     """Select deterministic TP/TN/FP/FN example indices.
@@ -457,7 +457,7 @@ def compute_local_shap(
     y_true: NDArray[np.int_],
     model: Any,
     feature_names: list[str],
-    threshold: float = PRODUCTION_THRESHOLD,
+    threshold: float = HISTORICAL_RF_THRESHOLD,
     top_k: int = 5,
 ) -> dict[str, LocalExplanation]:
     """Compute local SHAP explanations for selected example indices.
@@ -616,7 +616,7 @@ def build_provenance_metadata(shap_result: ShapExplanationResult) -> dict[str, A
             "random_state": 42,
             "n_jobs": -1,
         },
-        "business_threshold": 0.28,
+        "business_threshold": 0.27,
         "output_space": "probability (positive-class output from tree_path_dependent SHAP)",
         "positive_class": "Yes",
         "positive_class_index": 1,
@@ -869,7 +869,7 @@ def run_explainability_analysis(
     # 7. Local examples (full test set for selection)
     print("\n[7] Selecting local TP/TN/FP/FN examples...")
     all_preds = model.predict_proba(X_explain)[:, 1]
-    indices = select_local_examples(X_explain, y_true, all_preds, PRODUCTION_THRESHOLD)
+    indices = select_local_examples(X_explain, y_true, all_preds, HISTORICAL_RF_THRESHOLD)
     print(f"  Indices: {indices}")
 
     print("\n[8] Computing local SHAP explanations...")
@@ -880,7 +880,7 @@ def run_explainability_analysis(
         y_true,
         model,
         feature_names,
-        PRODUCTION_THRESHOLD,
+        HISTORICAL_RF_THRESHOLD,
     )
 
     # 9. Save artifacts
@@ -909,7 +909,7 @@ def run_explainability_analysis(
         "\nOutput space: probability (positive-class output from tree_path_dependent SHAP)"
     )
     print(f"Expected value (class 1): {global_result.base_value:.6f}")
-    print(f"Business threshold: {PRODUCTION_THRESHOLD}")
+    print(f"Historical RF business threshold: {HISTORICAL_RF_THRESHOLD}")
     print("\nTop 10 features (transformed):")
     for _, row in global_importance.head(10).iterrows():
         print(f"  {row['feature']}: {row['mean_abs_shap']:.6f}")

@@ -140,7 +140,7 @@ class ChurnPredictor:
                       If None, loads from pipeline_path.
             pipeline_path: Path to serialized pipeline. Used if pipeline is None.
             threshold: Decision threshold for positive class (churn).
-                       Defaults to 0.27 (business cost optimization from Phase 11).
+                       Defaults to 0.10 (business cost optimization from Phase 11 on Tuned LR).
         """
         if pipeline is not None:
             self.pipeline = pipeline

@@ -40,7 +40,9 @@ class ExtendedOptimizationResult:
     selected_metrics: ExtendedBusinessCostResult
     cost_matrix: ExtendedCostMatrix
     baseline_comparison: dict[str, float]
-    all_threshold_results: list[ExtendedBusinessCostResult] = field(default_factory=list)
+    all_threshold_results: list[ExtendedBusinessCostResult] = field(
+        default_factory=list
+    )
     optimization_data_source: str = "OOF (cross-validation on training data)"
     test_set_used_for_optimization: bool = False
     tie_breaking_rule: str = field(
@@ -170,7 +172,8 @@ def optimize_threshold_extended(
             raise ValueError(f"Threshold {t} is not in [0, 1].")
 
     all_results: list[ExtendedBusinessCostResult] = [
-        compute_extended_business_cost_metrics(y_true, y_proba, t, costs) for t in threshold_grid
+        compute_extended_business_cost_metrics(y_true, y_proba, t, costs)
+        for t in threshold_grid
     ]
 
     selected = _tie_break(all_results, costs)
@@ -277,10 +280,14 @@ def run_sensitivity_analysis(
                         "optimal_fp": metrics["fp"],
                         "optimal_fn": metrics["fn"],
                         "optimal_tp": metrics["tp"],
-                        "value_vs_no_contact": baseline["contact_no_one_total_cost"] - metrics["total_cost"],
-                        "value_vs_contact_all": baseline["contact_everyone_total_cost"] - metrics["total_cost"],
+                        "value_vs_no_contact": baseline["contact_no_one_total_cost"]
+                        - metrics["total_cost"],
+                        "value_vs_contact_all": baseline["contact_everyone_total_cost"]
+                        - metrics["total_cost"],
                         "contact_no_one_cost": baseline["contact_no_one_total_cost"],
-                        "contact_everyone_cost": baseline["contact_everyone_total_cost"],
+                        "contact_everyone_cost": baseline[
+                            "contact_everyone_total_cost"
+                        ],
                     }
                 )
 
@@ -336,8 +343,10 @@ def build_extended_optimization_summary(
             "contact_no_one_avg_cost": baseline["contact_no_one_avg_cost"],
             "contact_everyone_total_cost": baseline["contact_everyone_total_cost"],
             "contact_everyone_avg_cost": baseline["contact_everyone_avg_cost"],
-            "value_vs_no_contact": baseline["contact_no_one_total_cost"] - metrics["total_cost"],
-            "value_vs_contact_all": baseline["contact_everyone_total_cost"] - metrics["total_cost"],
+            "value_vs_no_contact": baseline["contact_no_one_total_cost"]
+            - metrics["total_cost"],
+            "value_vs_contact_all": baseline["contact_everyone_total_cost"]
+            - metrics["total_cost"],
         },
         model_level_metrics={
             "roc_auc": model_level_metrics.get("roc_auc", 0.0),
@@ -451,7 +460,9 @@ def save_extended_analysis(
     if sensitivity_results:
         fieldnames: list[str] = list(sensitivity_results[0].keys())
         with open(sensitivity_path, "w", newline="") as f:
-            sensitivity_writer: csv.DictWriter[str] = csv.DictWriter(f, fieldnames=fieldnames)
+            sensitivity_writer: csv.DictWriter[str] = csv.DictWriter(
+                f, fieldnames=fieldnames
+            )
             sensitivity_writer.writeheader()
             sensitivity_writer.writerows(sensitivity_results)
     artifacts["sensitivity"] = sensitivity_path
@@ -475,7 +486,13 @@ def plot_extended_cost_curve(
 
     fig, ax1 = plt.subplots(figsize=(12, 6))
 
-    ax1.plot(thresholds, total_costs, "b-", linewidth=2, label="Total Business Cost (Extended)")
+    ax1.plot(
+        thresholds,
+        total_costs,
+        "b-",
+        linewidth=2,
+        label="Total Business Cost (Extended)",
+    )
     ax1.axvline(
         result.selected_threshold,
         color="red",
@@ -618,7 +635,9 @@ def run_phase11_extended(
     print("PHASE 11 EXTENDED - BUSINESS COST OPTIMIZATION WITH RETENTION RATE")
     print("=" * 80)
     print("\nIMPORTANT: Retention success rate, CLV, and intervention cost are")
-    print("EXTERNAL BUSINESS ASSUMPTIONS. The dataset contains no intervention history.")
+    print(
+        "EXTERNAL BUSINESS ASSUMPTIONS. The dataset contains no intervention history."
+    )
     print("=" * 80)
 
     # Step 1: OOF optimization
@@ -702,7 +721,9 @@ def run_phase11_extended(
     print(f"\nOOF-Optimal Extended Business Threshold: {result.selected_threshold:.2f}")
     print(f"  Total Cost (OOF):     ${result.selected_metrics['total_cost']:.2f}")
     print(f"  Avg Cost/Customer:    ${result.selected_metrics['average_cost']:.2f}")
-    print(f"  Net Business Value:   ${result.selected_metrics['net_business_value']:.2f}")
+    print(
+        f"  Net Business Value:   ${result.selected_metrics['net_business_value']:.2f}"
+    )
     print(f"  Precision (OOF):      {result.selected_metrics['precision']:.4f}")
     print(f"  Recall (OOF):         {result.selected_metrics['recall']:.4f}")
     print(f"  F1 (OOF):             {result.selected_metrics['f1']:.4f}")
@@ -725,11 +746,17 @@ def run_phase11_extended(
     print("\nBaseline Comparisons (OOF population):")
     print(f"  Contact No One:       ${baseline['contact_no_one_total_cost']:.2f}")
     print(f"  Contact Everyone:     ${baseline['contact_everyone_total_cost']:.2f}")
-    print(f"  Value vs No Contact:  ${baseline['contact_no_one_total_cost'] - result.selected_metrics['total_cost']:.2f}")
-    print(f"  Value vs Contact All: ${baseline['contact_everyone_total_cost'] - result.selected_metrics['total_cost']:.2f}")
+    print(
+        f"  Value vs No Contact:  ${baseline['contact_no_one_total_cost'] - result.selected_metrics['total_cost']:.2f}"
+    )
+    print(
+        f"  Value vs Contact All: ${baseline['contact_everyone_total_cost'] - result.selected_metrics['total_cost']:.2f}"
+    )
 
     print("\nSensitivity Analysis (OOF):")
-    print(f"  {'Scenario':<50} {'r':>4} {'Threshold':>10} {'Cost':>10} {'Value vs None':>12}")
+    print(
+        f"  {'Scenario':<50} {'r':>4} {'Threshold':>10} {'Cost':>10} {'Value vs None':>12}"
+    )
     print(f"  {'-' * 50} {'-' * 4} {'-' * 10} {'-' * 10} {'-' * 12}")
     for s in sensitivity:
         print(
@@ -744,11 +771,13 @@ def run_phase11_extended(
 
     print(f"\nTie-breaking rule: {result.tie_breaking_rule}")
 
-    print("\nNOTE: Phase 11 production threshold was 0.28 (r=1.0 implicit).")
+    print("\nNOTE: Phase 11 production threshold was 0.27 (r=1.0 implicit, RandomForest).")
     print(
         f"      Extended optimal threshold at r={costs.retention_success_rate} is {result.selected_threshold:.2f}."
     )
-    print("      Retention success rate, CLV, and intervention cost are EXTERNAL ASSUMPTIONS.")
+    print(
+        "      Retention success rate, CLV, and intervention cost are EXTERNAL ASSUMPTIONS."
+    )
 
     return {
         "optimization_result": result,

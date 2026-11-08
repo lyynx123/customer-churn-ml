@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from customer_churn.explain import (
-    PRODUCTION_THRESHOLD,
+    HISTORICAL_RF_THRESHOLD,
     get_feature_names,
     load_explanation_data,
     load_production_pipeline,
@@ -84,6 +84,7 @@ def test_tree_explainer_initialization():
     This test is skipped because TreeExplainer doesn't support LogisticRegression.
     """
     import pytest
+
     pytest.skip(
         "Phase 13 SHAP was done for RandomForest (historical production model). "
         "Current production model (Tuned LogisticRegression) requires LinearExplainer. "
@@ -105,6 +106,7 @@ def test_shap_output_shape_and_additivity():
     RandomForest model and are preserved as historical artifacts.
     """
     import pytest
+
     pytest.skip(
         "Phase 13 SHAP was done for RandomForest (historical production model). "
         "Current production model (Tuned LogisticRegression) requires LinearExplainer. "
@@ -115,6 +117,7 @@ def test_shap_output_shape_and_additivity():
 def test_binary_class_semantics():
     """SHAP was done for Phase 13 RandomForest (previous production model)."""
     import pytest
+
     pytest.skip(
         "Phase 13 SHAP was done for RandomForest (historical production model). "
         "Current production model (Tuned LogisticRegression) requires LinearExplainer. "
@@ -130,6 +133,7 @@ def test_binary_class_semantics():
 def test_deterministic_explanations():
     """SHAP was done for Phase 13 RandomForest (previous production model)."""
     import pytest
+
     pytest.skip(
         "Phase 13 SHAP was done for RandomForest (historical production model). "
         "Current production model (Tuned LogisticRegression) requires LinearExplainer. "
@@ -145,6 +149,7 @@ def test_deterministic_explanations():
 def test_no_model_mutation():
     """SHAP was done for Phase 13 RandomForest (previous production model)."""
     import pytest
+
     pytest.skip(
         "Phase 13 SHAP was done for RandomForest (historical production model). "
         "Current production model (Tuned LogisticRegression) requires LinearExplainer. "
@@ -160,6 +165,7 @@ def test_no_model_mutation():
 def test_original_feature_grouping():
     """SHAP was done for Phase 13 RandomForest (previous production model)."""
     import pytest
+
     pytest.skip(
         "Phase 13 SHAP was done for RandomForest (historical production model). "
         "Current production model (Tuned LogisticRegression) requires LinearExplainer. "
@@ -179,14 +185,14 @@ def test_local_example_selection():
     X_exp, y_true, _ = load_explanation_data("test")
     preds = model.predict_proba(X_exp)[:, 1]
 
-    indices = select_local_examples(X_exp, y_true, preds, PRODUCTION_THRESHOLD)
+    indices = select_local_examples(X_exp, y_true, preds, HISTORICAL_RF_THRESHOLD)
 
     for key in ["tp", "tn", "fp", "fn"]:
         assert key in indices
         assert indices[key] >= 0  # all exist in this dataset
         # Verify correctness
         idx = indices[key]
-        pred_class = int(preds[idx] >= PRODUCTION_THRESHOLD)
+        pred_class = int(preds[idx] >= HISTORICAL_RF_THRESHOLD)
         actual = int(y_true[idx])
         if key == "tp":
             assert pred_class == 1 and actual == 1
@@ -206,6 +212,7 @@ def test_local_example_selection():
 def test_local_explanation_generation():
     """SHAP was done for Phase 13 RandomForest (previous production model)."""
     import pytest
+
     pytest.skip(
         "Phase 13 SHAP was done for RandomForest (historical production model). "
         "Current production model (Tuned LogisticRegression) requires LinearExplainer. "
@@ -221,6 +228,7 @@ def test_local_explanation_generation():
 def test_empty_input_handling():
     """SHAP was done for Phase 13 RandomForest (previous production model)."""
     import pytest
+
     pytest.skip(
         "Phase 13 SHAP was done for RandomForest (historical production model). "
         "Current production model (Tuned LogisticRegression) requires LinearExplainer. "
@@ -251,6 +259,7 @@ def test_background_never_uses_test():
 def test_artifact_schema_sanity():
     """SHAP was done for Phase 13 RandomForest (previous production model)."""
     import pytest
+
     pytest.skip(
         "Phase 13 SHAP was done for RandomForest (historical production model). "
         "Current production model (Tuned LogisticRegression) requires LinearExplainer. "

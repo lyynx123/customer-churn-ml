@@ -95,7 +95,7 @@ def _tie_break(
         return min(tied, key=lambda r: r["threshold"])
 
 
-def get_tuned_lr_oof_predictions() -> tuple[np.ndarray, np.ndarray]:
+def get_tuned_lr_oof_predictions() -> tuple[np.ndarray, np.ndarray]:  # type: ignore[return-value]
     """Generate out-of-fold probability predictions for tuned LR."""
     train_df = load_data("train")
     X = train_df.drop(columns=[TARGET_COL])
@@ -117,13 +117,13 @@ def get_tuned_lr_oof_predictions() -> tuple[np.ndarray, np.ndarray]:
     y_proba_oof = cross_val_predict(
         pipeline,
         X,
-        y,
+        y,  # type: ignore[arg-type]
         cv=cv,
         method="predict_proba",
         n_jobs=2,
     )[:, 1]
 
-    return y, y_proba_oof
+    return y, y_proba_oof  # type: ignore[return-value]
 
 
 def optimize_threshold_business(

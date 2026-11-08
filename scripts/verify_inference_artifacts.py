@@ -28,7 +28,9 @@ REQUIRED_FILES = [
 # The expected threshold is read from the business cost analysis artifact
 # (authoritative source for production threshold) rather than hardcoded.
 EXPECTED_SOURCE_PHASE = "Phase 11"
-EXPECTED_SELECTION_METHOD = "Business cost optimization on OOF probabilities (Tuned LogisticRegression)"
+EXPECTED_SELECTION_METHOD = (
+    "Business cost optimization on OOF probabilities (Tuned LogisticRegression)"
+)
 EXPECTED_NUMERIC_FEATURES = [
     "MonthlyCharges",
     "SeniorCitizen",

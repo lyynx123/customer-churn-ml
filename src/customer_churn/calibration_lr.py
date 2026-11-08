@@ -147,7 +147,7 @@ def load_train_xy() -> tuple[pd.DataFrame, NDArray[np.int_]]:
 
 def get_oof_raw_probabilities(
     n_splits: int = CV_FOLDS,
-) -> tuple[NDArray[np.int_], NDArray[np.float64]]:
+) -> tuple[NDArray[np.int_], NDArray[np.float64]]:  # type: ignore[return-value]
     X_train, y_train = load_train_xy()
 
     pipeline = build_final_lr_pipeline()  # UNFITTED Phase 8C-spec
@@ -158,14 +158,14 @@ def get_oof_raw_probabilities(
     y_proba_oof = cross_val_predict(
         pipeline,
         X_train,
-        y_train,
+        y_train,  # type: ignore[arg-type]
         cv=cv,
         method="predict_proba",
         n_jobs=-1,
     )
-    y_proba_positive_class = np.asarray(y_proba_oof[:, 1], dtype=float)
+    y_proba_positive_class = np.asarray(y_proba_oof[:, 1], dtype=float)  # type: ignore[misc]
 
-    return y_train, y_proba_positive_class
+    return y_train, y_proba_positive_class  # type: ignore[return-value]
 
 
 @dataclass

@@ -108,16 +108,24 @@ class TestExtendedCostFormula:
         """Test r at boundaries 0 and 1."""
         # r=0
         costs_r0 = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=0.0, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.0,
+            clv=100.0,
         )
         tp_cost_r0 = calculate_extended_expected_cost(0, 0, 0, 1, costs_r0)
         assert tp_cost_r0 == 110.0  # intervention + full clv
 
         # r=1
         costs_r1 = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=1.0, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=1.0,
+            clv=100.0,
         )
         tp_cost_r1 = calculate_extended_expected_cost(0, 0, 0, 1, costs_r1)
         assert tp_cost_r1 == 10.0  # only intervention
@@ -126,24 +134,36 @@ class TestExtendedCostFormula:
         """Negative costs must raise ValueError."""
         with pytest.raises(ValueError, match="must be non-negative"):
             ExtendedCostMatrix(
-                cost_tn=-1.0, cost_fp=10.0, cost_fn=100.0,
-                cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+                cost_tn=-1.0,
+                cost_fp=10.0,
+                cost_fn=100.0,
+                cost_intervention=10.0,
+                retention_success_rate=0.5,
+                clv=100.0,
             )
 
     def test_validation_r_out_of_bounds_low(self):
         """r < 0 must raise ValueError."""
         with pytest.raises(ValueError, match="retention_success_rate.*must be in"):
             ExtendedCostMatrix(
-                cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-                cost_intervention=10.0, retention_success_rate=-0.1, clv=100.0
+                cost_tn=0.0,
+                cost_fp=10.0,
+                cost_fn=100.0,
+                cost_intervention=10.0,
+                retention_success_rate=-0.1,
+                clv=100.0,
             )
 
     def test_validation_r_out_of_bounds_high(self):
         """r > 1 must raise ValueError."""
         with pytest.raises(ValueError, match="retention_success_rate.*must be in"):
             ExtendedCostMatrix(
-                cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-                cost_intervention=10.0, retention_success_rate=1.1, clv=100.0
+                cost_tn=0.0,
+                cost_fp=10.0,
+                cost_fn=100.0,
+                cost_intervention=10.0,
+                retention_success_rate=1.1,
+                clv=100.0,
             )
 
 
@@ -153,10 +173,16 @@ class TestExtendedAverageCost:
     def test_average_cost_basic(self):
         """Average cost = total_cost / total_customers."""
         costs = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.5,
+            clv=100.0,
         )
-        avg = extended_average_cost_per_customer(tn=100, fp=20, fn=15, tp=65, costs=costs)
+        avg = extended_average_cost_per_customer(
+            tn=100, fp=20, fn=15, tp=65, costs=costs
+        )
         total_cost = calculate_extended_expected_cost(100, 20, 15, 65, costs)
         expected_avg = total_cost / 200.0
         assert avg == expected_avg
@@ -164,8 +190,12 @@ class TestExtendedAverageCost:
     def test_average_cost_zero_customers(self):
         """Zero customers returns 0."""
         costs = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.5,
+            clv=100.0,
         )
         avg = extended_average_cost_per_customer(tn=0, fp=0, fn=0, tp=0, costs=costs)
         assert avg == 0.0
@@ -177,8 +207,12 @@ class TestExtendedCostPerPredictedChurn:
     def test_intervention_cost_only(self):
         """Only intervention cost counted for predicted churners."""
         costs = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.5,
+            clv=100.0,
         )
         cpc = extended_cost_per_predicted_churn(fp=20, tp=50, costs=costs)
         assert cpc == (20 * 10.0 + 50 * 10.0) / 70.0
@@ -186,8 +220,12 @@ class TestExtendedCostPerPredictedChurn:
     def test_no_predictions(self):
         """Zero predicted churn returns 0."""
         costs = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.5,
+            clv=100.0,
         )
         cpc = extended_cost_per_predicted_churn(fp=0, tp=0, costs=costs)
         assert cpc == 0.0
@@ -199,8 +237,12 @@ class TestComputeExtendedBusinessCostMetrics:
     def test_perfect_predictions(self):
         """Perfect predictions: only TP intervention costs."""
         costs = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.5,
+            clv=100.0,
         )
         y_true = [0, 0, 1, 1]
         y_proba = [0.1, 0.2, 0.9, 0.8]
@@ -219,8 +261,12 @@ class TestComputeExtendedBusinessCostMetrics:
     def test_worst_predictions(self):
         """Worst predictions: FP intervention + FN full loss."""
         costs = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.5,
+            clv=100.0,
         )
         y_true = [0, 0, 1, 1]
         y_proba = [0.9, 0.8, 0.1, 0.2]
@@ -237,8 +283,12 @@ class TestComputeExtendedBusinessCostMetrics:
     def test_threshold_boundary_0(self):
         """Threshold 0 predicts everything positive."""
         costs = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.5,
+            clv=100.0,
         )
         y_true = [0, 0, 1, 1]
         y_proba = [0.5, 0.3, 0.8, 0.9]
@@ -255,8 +305,12 @@ class TestComputeExtendedBusinessCostMetrics:
     def test_threshold_boundary_1(self):
         """Threshold 1 predicts nothing positive."""
         costs = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.5,
+            clv=100.0,
         )
         y_true = [0, 0, 1, 1]
         y_proba = [0.1, 0.2, 0.8, 0.9]
@@ -273,8 +327,12 @@ class TestComputeExtendedBusinessCostMetrics:
     def test_cost_components_decomposition(self):
         """Verify cost decomposition fields."""
         costs = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.5,
+            clv=100.0,
         )
         y_true = [0, 0, 1, 1]
         y_proba = [0.1, 0.2, 0.9, 0.8]
@@ -302,8 +360,12 @@ class TestBaselineCosts:
     def test_contact_no_one(self):
         """Contact no one: all churners lost, zero intervention."""
         costs = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.5,
+            clv=100.0,
         )
         y_true = np.array([0, 0, 0, 1, 1, 1])  # 3 churners, 3 non-churners
         baseline = baseline_costs(y_true, costs)
@@ -315,8 +377,12 @@ class TestBaselineCosts:
     def test_contact_everyone(self):
         """Contact everyone: all pay intervention, churners retained with prob r."""
         costs = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.5,
+            clv=100.0,
         )
         y_true = np.array([0, 0, 0, 1, 1, 1])  # 3 churners, 3 non-churners
         baseline = baseline_costs(y_true, costs)
@@ -326,8 +392,12 @@ class TestBaselineCosts:
     def test_baselines_same_population(self):
         """Baselines use identical population as model evaluation."""
         costs = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.5,
+            clv=100.0,
         )
         y_true = np.array([0, 0, 1, 1])
         baseline = baseline_costs(y_true, costs)
@@ -368,8 +438,12 @@ class TestDeterministic:
     def test_deterministic_cost_calculation(self):
         """Same inputs always produce same outputs."""
         costs = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.5,
+            clv=100.0,
         )
         for _ in range(10):
             total = calculate_extended_expected_cost(10, 5, 3, 7, costs)
@@ -380,8 +454,12 @@ class TestDeterministic:
     def test_deterministic_metrics(self):
         """compute_extended_business_cost_metrics is deterministic."""
         costs = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.5,
+            clv=100.0,
         )
         y_true = [0, 0, 1, 1]
         y_proba = [0.1, 0.2, 0.7, 0.8]

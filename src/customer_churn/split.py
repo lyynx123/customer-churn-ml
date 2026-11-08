@@ -7,7 +7,10 @@ from .config import PROCESSED_DATA_PATH, RANDOM_SEED
 
 def split_data() -> tuple[Path, Path, Path]:
     """Split processed dataframe into train, val, test.
+
     Returns paths to parquet files.
+    Split: 49% train, 21% validation, 30% test (stratified).
+    Validation set is used for model selection after hyperparameter tuning (tune.py).
     """
     from sklearn.model_selection import train_test_split
 

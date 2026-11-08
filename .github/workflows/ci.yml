@@ -42,7 +42,12 @@ jobs:
         run: |
           uv run python -m customer_churn.business_threshold_optimizer
 
-      # Extract portable inference artifacts (requires business_cost_analysis.json)
+      # Generate Phase 11 business cost artifacts for Tuned LR (production model)
+      - name: Generate Phase 11 business cost artifacts (Tuned LR)
+        run: |
+          uv run python -m customer_churn.business_threshold_optimizer_lr
+
+      # Extract portable inference artifacts (requires tuned_lr_business_cost_analysis.json)
       - name: Extract inference artifacts
         run: |
           uv run python scripts/extract_inference_artifacts.py

@@ -53,25 +53,53 @@ class TestTieBreaking:
         from customer_churn.extended_threshold_optimizer import _tie_break
 
         costs = ExtendedCostMatrix(
-            cost_tn=0, cost_fp=200, cost_fn=100, cost_intervention=200,
-            retention_success_rate=0.0, clv=100  # r=0 makes TP=FP in cost
+            cost_tn=0,
+            cost_fp=200,
+            cost_fn=100,
+            cost_intervention=200,
+            retention_success_rate=0.0,
+            clv=100,  # r=0 makes TP=FP in cost
         )
         # Create two results with equal cost
         r1 = ExtendedBusinessCostResult(
-            threshold=0.3, tn=3, fp=0, fn=1, tp=2,
-            precision=1.0, recall=2/3, f1=0.8, accuracy=5/6,
-            specificity=1.0, npv=0.75,
-            total_cost=800.0, average_cost=800/6, cost_per_predicted_churn=200.0,
-            net_business_value=-800.0, expected_churn_loss=700.0,
-            expected_intervention_cost=400.0, expected_retained_value=0.0
+            threshold=0.3,
+            tn=3,
+            fp=0,
+            fn=1,
+            tp=2,
+            precision=1.0,
+            recall=2 / 3,
+            f1=0.8,
+            accuracy=5 / 6,
+            specificity=1.0,
+            npv=0.75,
+            total_cost=800.0,
+            average_cost=800 / 6,
+            cost_per_predicted_churn=200.0,
+            net_business_value=-800.0,
+            expected_churn_loss=700.0,
+            expected_intervention_cost=400.0,
+            expected_retained_value=0.0,
         )
         r2 = ExtendedBusinessCostResult(
-            threshold=0.6, tn=3, fp=0, fn=2, tp=1,
-            precision=1.0, recall=1/3, f1=0.5, accuracy=4/6,
-            specificity=1.0, npv=0.6,
-            total_cost=800.0, average_cost=800/6, cost_per_predicted_churn=200.0,
-            net_business_value=-800.0, expected_churn_loss=700.0,
-            expected_intervention_cost=200.0, expected_retained_value=0.0
+            threshold=0.6,
+            tn=3,
+            fp=0,
+            fn=2,
+            tp=1,
+            precision=1.0,
+            recall=1 / 3,
+            f1=0.5,
+            accuracy=4 / 6,
+            specificity=1.0,
+            npv=0.6,
+            total_cost=800.0,
+            average_cost=800 / 6,
+            cost_per_predicted_churn=200.0,
+            net_business_value=-800.0,
+            expected_churn_loss=700.0,
+            expected_intervention_cost=200.0,
+            expected_retained_value=0.0,
         )
         result = _tie_break([r1, r2], costs)
         # FP cost (200) > FN cost (100) -> prefer higher threshold (0.6)
@@ -83,24 +111,52 @@ class TestTieBreaking:
         from customer_churn.extended_threshold_optimizer import _tie_break
 
         costs = ExtendedCostMatrix(
-            cost_tn=0, cost_fp=10, cost_fn=200, cost_intervention=10,
-            retention_success_rate=0.0, clv=200  # r=0, FN cost > FP cost
+            cost_tn=0,
+            cost_fp=10,
+            cost_fn=200,
+            cost_intervention=10,
+            retention_success_rate=0.0,
+            clv=200,  # r=0, FN cost > FP cost
         )
         r1 = ExtendedBusinessCostResult(
-            threshold=0.3, tn=3, fp=1, fn=1, tp=2,
-            precision=2/3, recall=2/3, f1=0.66, accuracy=5/6,
-            specificity=0.75, npv=0.75,
-            total_cost=610.0, average_cost=610/6, cost_per_predicted_churn=10.0,
-            net_business_value=-610.0, expected_churn_loss=600.0,
-            expected_intervention_cost=30.0, expected_retained_value=0.0
+            threshold=0.3,
+            tn=3,
+            fp=1,
+            fn=1,
+            tp=2,
+            precision=2 / 3,
+            recall=2 / 3,
+            f1=0.66,
+            accuracy=5 / 6,
+            specificity=0.75,
+            npv=0.75,
+            total_cost=610.0,
+            average_cost=610 / 6,
+            cost_per_predicted_churn=10.0,
+            net_business_value=-610.0,
+            expected_churn_loss=600.0,
+            expected_intervention_cost=30.0,
+            expected_retained_value=0.0,
         )
         r2 = ExtendedBusinessCostResult(
-            threshold=0.6, tn=3, fp=0, fn=2, tp=1,
-            precision=1.0, recall=1/3, f1=0.5, accuracy=4/6,
-            specificity=1.0, npv=0.6,
-            total_cost=610.0, average_cost=610/6, cost_per_predicted_churn=10.0,
-            net_business_value=-610.0, expected_churn_loss=600.0,
-            expected_intervention_cost=10.0, expected_retained_value=0.0
+            threshold=0.6,
+            tn=3,
+            fp=0,
+            fn=2,
+            tp=1,
+            precision=1.0,
+            recall=1 / 3,
+            f1=0.5,
+            accuracy=4 / 6,
+            specificity=1.0,
+            npv=0.6,
+            total_cost=610.0,
+            average_cost=610 / 6,
+            cost_per_predicted_churn=10.0,
+            net_business_value=-610.0,
+            expected_churn_loss=600.0,
+            expected_intervention_cost=10.0,
+            expected_retained_value=0.0,
         )
         result = _tie_break([r1, r2], costs)
         # FP cost (10) <= FN cost (200) -> prefer higher recall -> lower threshold (0.3)
@@ -112,33 +168,73 @@ class TestTieBreaking:
         from customer_churn.extended_threshold_optimizer import _tie_break
 
         costs = ExtendedCostMatrix(
-            cost_tn=0, cost_fp=10, cost_fn=10, cost_intervention=10,
-            retention_success_rate=0.5, clv=10
+            cost_tn=0,
+            cost_fp=10,
+            cost_fn=10,
+            cost_intervention=10,
+            retention_success_rate=0.5,
+            clv=10,
         )
         # All three thresholds have same cost and recall
         r1 = ExtendedBusinessCostResult(
-            threshold=0.3, tn=2, fp=0, fn=0, tp=2,
-            precision=1.0, recall=1.0, f1=1.0, accuracy=1.0,
-            specificity=1.0, npv=1.0,
-            total_cost=40.0, average_cost=10.0, cost_per_predicted_churn=10.0,
-            net_business_value=-40.0, expected_churn_loss=0.0,
-            expected_intervention_cost=40.0, expected_retained_value=10.0
+            threshold=0.3,
+            tn=2,
+            fp=0,
+            fn=0,
+            tp=2,
+            precision=1.0,
+            recall=1.0,
+            f1=1.0,
+            accuracy=1.0,
+            specificity=1.0,
+            npv=1.0,
+            total_cost=40.0,
+            average_cost=10.0,
+            cost_per_predicted_churn=10.0,
+            net_business_value=-40.0,
+            expected_churn_loss=0.0,
+            expected_intervention_cost=40.0,
+            expected_retained_value=10.0,
         )
         r2 = ExtendedBusinessCostResult(
-            threshold=0.5, tn=2, fp=0, fn=0, tp=2,
-            precision=1.0, recall=1.0, f1=1.0, accuracy=1.0,
-            specificity=1.0, npv=1.0,
-            total_cost=40.0, average_cost=10.0, cost_per_predicted_churn=10.0,
-            net_business_value=-40.0, expected_churn_loss=0.0,
-            expected_intervention_cost=40.0, expected_retained_value=10.0
+            threshold=0.5,
+            tn=2,
+            fp=0,
+            fn=0,
+            tp=2,
+            precision=1.0,
+            recall=1.0,
+            f1=1.0,
+            accuracy=1.0,
+            specificity=1.0,
+            npv=1.0,
+            total_cost=40.0,
+            average_cost=10.0,
+            cost_per_predicted_churn=10.0,
+            net_business_value=-40.0,
+            expected_churn_loss=0.0,
+            expected_intervention_cost=40.0,
+            expected_retained_value=10.0,
         )
         r3 = ExtendedBusinessCostResult(
-            threshold=0.7, tn=2, fp=0, fn=0, tp=2,
-            precision=1.0, recall=1.0, f1=1.0, accuracy=1.0,
-            specificity=1.0, npv=1.0,
-            total_cost=40.0, average_cost=10.0, cost_per_predicted_churn=10.0,
-            net_business_value=-40.0, expected_churn_loss=0.0,
-            expected_intervention_cost=40.0, expected_retained_value=10.0
+            threshold=0.7,
+            tn=2,
+            fp=0,
+            fn=0,
+            tp=2,
+            precision=1.0,
+            recall=1.0,
+            f1=1.0,
+            accuracy=1.0,
+            specificity=1.0,
+            npv=1.0,
+            total_cost=40.0,
+            average_cost=10.0,
+            cost_per_predicted_churn=10.0,
+            net_business_value=-40.0,
+            expected_churn_loss=0.0,
+            expected_intervention_cost=40.0,
+            expected_retained_value=10.0,
         )
         result = _tie_break([r1, r2, r3], costs)
         # All equal -> fallback to lower threshold
@@ -162,11 +258,23 @@ class TestExtendedOptimization:
         result = optimize_threshold_extended(y_true, y_proba, costs)
         assert 0.0 <= result.selected_threshold <= 1.0
         required = [
-            "threshold", "tn", "fp", "fn", "tp",
-            "precision", "recall", "f1", "accuracy",
-            "specificity", "npv", "total_cost", "average_cost",
-            "cost_per_predicted_churn", "net_business_value",
-            "expected_churn_loss", "expected_intervention_cost",
+            "threshold",
+            "tn",
+            "fp",
+            "fn",
+            "tp",
+            "precision",
+            "recall",
+            "f1",
+            "accuracy",
+            "specificity",
+            "npv",
+            "total_cost",
+            "average_cost",
+            "cost_per_predicted_churn",
+            "net_business_value",
+            "expected_churn_loss",
+            "expected_intervention_cost",
             "expected_retained_value",
         ]
         for key in required:
@@ -192,8 +300,12 @@ class TestExtendedOptimization:
         y_true, y_proba = self._synthetic_oof_data()
         with pytest.raises(ValueError):
             costs = ExtendedCostMatrix(
-                cost_tn=0.0, cost_fp=-5.0, cost_fn=100.0,
-                cost_intervention=10.0, retention_success_rate=0.5, clv=100.0
+                cost_tn=0.0,
+                cost_fp=-5.0,
+                cost_fn=100.0,
+                cost_intervention=10.0,
+                retention_success_rate=0.5,
+                clv=100.0,
             )
             optimize_threshold_extended(y_true, y_proba, costs)
 
@@ -264,7 +376,8 @@ class TestSensitivityAnalysis:
         """Sensitivity analysis runs across multiple retention rates."""
         y_true, y_proba = get_oof_predictions()
         sensitivity = run_sensitivity_analysis(
-            y_true, y_proba,
+            y_true,
+            y_proba,
             retention_rates=[0.2, 0.5, 0.8],
             clv_values=[100.0],
             intervention_costs=[10.0],
@@ -281,7 +394,8 @@ class TestSensitivityAnalysis:
         """Sensitivity analysis runs across multiple CLV values."""
         y_true, y_proba = get_oof_predictions()
         sensitivity = run_sensitivity_analysis(
-            y_true, y_proba,
+            y_true,
+            y_proba,
             retention_rates=[0.5],
             clv_values=[50.0, 100.0, 200.0],
             intervention_costs=[10.0],
@@ -292,7 +406,8 @@ class TestSensitivityAnalysis:
         """Sensitivity analysis runs across multiple intervention costs."""
         y_true, y_proba = get_oof_predictions()
         sensitivity = run_sensitivity_analysis(
-            y_true, y_proba,
+            y_true,
+            y_proba,
             retention_rates=[0.5],
             clv_values=[100.0],
             intervention_costs=[5.0, 10.0, 25.0],
@@ -303,7 +418,8 @@ class TestSensitivityAnalysis:
         """Sensitivity analysis runs all combinations."""
         y_true, y_proba = get_oof_predictions()
         sensitivity = run_sensitivity_analysis(
-            y_true, y_proba,
+            y_true,
+            y_proba,
             retention_rates=[0.3, 0.6],
             clv_values=[100.0, 200.0],
             intervention_costs=[10.0, 20.0],
@@ -332,6 +448,7 @@ class TestPhase11Consistency:
     def test_phase11_artifacts_unchanged(self):
         """Phase 11 artifacts remain unchanged."""
         import json
+
         with open("models/business_cost_analysis.json") as f:
             data = json.load(f)
         assert data["selected_threshold"] == 0.27
@@ -343,13 +460,14 @@ class TestPhase11Consistency:
     def test_no_test_set_in_optimization(self):
         """Optimizer never uses test set."""
         import inspect
+
         source = inspect.getsource(optimize_threshold_extended)
         # Check that test data loading is not in source
         assert 'load_data("test")' not in source
-        assert 'y_test' not in source
+        assert "y_test" not in source
         source2 = inspect.getsource(run_extended_optimization)
         assert 'load_data("test")' not in source2
-        assert 'y_test' not in source2
+        assert "y_test" not in source2
 
 
 class TestOOFUsage:
@@ -417,8 +535,12 @@ class TestThresholdBehaviorWrtR:
     def test_r_equals_1_reproduces_phase11_cost(self):
         """At r=1.0, OOF total cost with new data is $26,570."""
         costs = ExtendedCostMatrix(
-            cost_tn=0.0, cost_fp=10.0, cost_fn=100.0,
-            cost_intervention=10.0, retention_success_rate=1.0, clv=100.0
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=1.0,
+            clv=100.0,
         )
         result = run_extended_optimization(costs)
         # With new data (TotalCharges=0 for tenure=0), OOF cost is $26,570
@@ -435,11 +557,23 @@ class TestExtendedMetricsSchema:
         metrics = result.selected_metrics
 
         required = [
-            "threshold", "tn", "fp", "fn", "tp",
-            "precision", "recall", "f1", "accuracy",
-            "specificity", "npv", "total_cost", "average_cost",
-            "cost_per_predicted_churn", "net_business_value",
-            "expected_churn_loss", "expected_intervention_cost",
+            "threshold",
+            "tn",
+            "fp",
+            "fn",
+            "tp",
+            "precision",
+            "recall",
+            "f1",
+            "accuracy",
+            "specificity",
+            "npv",
+            "total_cost",
+            "average_cost",
+            "cost_per_predicted_churn",
+            "net_business_value",
+            "expected_churn_loss",
+            "expected_intervention_cost",
             "expected_retained_value",
         ]
         for key in required:

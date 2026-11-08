@@ -1316,6 +1316,7 @@ def test_phase8c_model_artifact_unchanged():
     pipeline = joblib.load("models/final_pipeline.joblib")
     model = pipeline.named_steps["model"]
     from sklearn.linear_model import LogisticRegression
+
     assert isinstance(model, LogisticRegression)
     assert model.C == 1.0
     assert model.solver == "lbfgs"

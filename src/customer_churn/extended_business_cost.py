@@ -93,7 +93,9 @@ class ExtendedConfusionMatrixCounts:
             ("tp", self.tp),
         ]:
             if value < 0:
-                raise ValueError(f"Confusion matrix count {name}={value} must be non-negative.")
+                raise ValueError(
+                    f"Confusion matrix count {name}={value} must be non-negative."
+                )
 
 
 def calculate_extended_expected_cost(
@@ -164,7 +166,9 @@ def extended_cost_per_predicted_churn(
     if n_predicted_churn == 0:
         return 0.0
     # Both FP and TP receive intervention
-    total_intervention_cost = fp * costs.cost_intervention + tp * costs.cost_intervention
+    total_intervention_cost = (
+        fp * costs.cost_intervention + tp * costs.cost_intervention
+    )
     return total_intervention_cost / n_predicted_churn
 
 
@@ -252,9 +256,9 @@ def compute_extended_business_cost_metrics(
     cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
     tn, fp, fn, tp = cm.ravel()
 
-    precision = float(precision_score(y_true, y_pred, zero_division=0))
-    recall = float(recall_score(y_true, y_pred, zero_division=0))
-    f1 = float(f1_score(y_true, y_pred, zero_division=0))
+    precision = float(precision_score(y_true, y_pred, zero_division=0))  # type: ignore[call-overload]
+    recall = float(recall_score(y_true, y_pred, zero_division=0))  # type: ignore[call-overload]
+    f1 = float(f1_score(y_true, y_pred, zero_division=0))  # type: ignore[call-overload]
     accuracy = float(accuracy_score(y_true, y_pred))
 
     specificity = float(tn / (tn + fp)) if (tn + fp) > 0 else 0.0
@@ -331,8 +335,7 @@ def baseline_costs(
 
     # Contact everyone: all pay intervention cost, churners retained with prob r
     cost_contact_all = (
-        n_total * costs.cost_intervention
-        + n_churn * (1.0 - r) * costs.clv
+        n_total * costs.cost_intervention + n_churn * (1.0 - r) * costs.clv
     )
 
     return {

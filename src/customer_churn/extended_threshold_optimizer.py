@@ -771,7 +771,9 @@ def run_phase11_extended(
 
     print(f"\nTie-breaking rule: {result.tie_breaking_rule}")
 
-    print("\nNOTE: Phase 11 production threshold was 0.27 (r=1.0 implicit, RandomForest).")
+    print(
+        "\nNOTE: Phase 11 production threshold was 0.27 (r=1.0 implicit, RandomForest)."
+    )
     print(
         f"      Extended optimal threshold at r={costs.retention_success_rate} is {result.selected_threshold:.2f}."
     )

@@ -262,6 +262,7 @@ def run_nested_tuning(
         else:
             # Fallback: use the scorer
             from sklearn.metrics import get_scorer
+
             scorer = get_scorer(scoring)
             score = scorer(best_estimator, X_test_outer, y_test_outer)
 
@@ -312,6 +313,7 @@ def run_nested_tuning(
             score = average_precision_score(all_y_true_np, all_y_proba_np)
         else:
             from sklearn.metrics import get_scorer
+
             scorer = get_scorer(metric_name)
             # For threshold-dependent metrics, we need predictions at 0.5
             y_pred = (all_y_proba_np >= 0.5).astype(int)
@@ -470,7 +472,9 @@ def evaluate_on_validation(
         elif model_name == "RandomForestClassifier":
             from sklearn.ensemble import RandomForestClassifier
 
-            model = RandomForestClassifier(random_state=RANDOM_SEED, n_jobs=1, **model_params)
+            model = RandomForestClassifier(
+                random_state=RANDOM_SEED, n_jobs=1, **model_params
+            )
         else:
             continue
 
@@ -674,7 +678,9 @@ if __name__ == "__main__":
     for name, result in results.items():
         if "best_params_per_fold" in result:
             # Nested CV results
-            print(f"{name} outer CV ROC-AUC: {result['mean_outer_score']:.4f} ± {result['std_outer_score']:.4f}")
+            print(
+                f"{name} outer CV ROC-AUC: {result['mean_outer_score']:.4f} ± {result['std_outer_score']:.4f}"
+            )
             print(f"{name} best params per fold: {result['best_params_per_fold']}")
         else:
             # Legacy results

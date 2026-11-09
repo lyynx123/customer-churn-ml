@@ -293,8 +293,8 @@ customer = {
     "TotalCharges": 29.85,
 }
 result = predictor.predict_single(customer)
-  # Returns: {'churn_probability': 0.64, 'threshold': 0.10,
-  # 'prediction': 1, 'prediction_label': 'Yes', ...}
+# Returns: {'churn_probability': 0.64, 'threshold': 0.10,
+# 'prediction': 1, 'prediction_label': 'Yes', ...}
 
 # Batch prediction
 import pandas as pd

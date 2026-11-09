@@ -869,7 +869,9 @@ def run_explainability_analysis(
     # 7. Local examples (full test set for selection)
     print("\n[7] Selecting local TP/TN/FP/FN examples...")
     all_preds = model.predict_proba(X_explain)[:, 1]
-    indices = select_local_examples(X_explain, y_true, all_preds, HISTORICAL_RF_THRESHOLD)
+    indices = select_local_examples(
+        X_explain, y_true, all_preds, HISTORICAL_RF_THRESHOLD
+    )
     print(f"  Indices: {indices}")
 
     print("\n[8] Computing local SHAP explanations...")

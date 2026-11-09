@@ -77,7 +77,9 @@ def _ensure_raw_data() -> None:
             _verify_checksum(RAW_DATA_PATH)
             return
         except ValueError:
-            print(f"Checksum verification failed for {RAW_DATA_PATH}. Re-downloading...")
+            print(
+                f"Checksum verification failed for {RAW_DATA_PATH}. Re-downloading..."
+            )
             RAW_DATA_PATH.unlink()
 
     RAW_DATA_PATH.parent.mkdir(parents=True, exist_ok=True)

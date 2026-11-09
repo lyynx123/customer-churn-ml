@@ -1,0 +1,438 @@
+{
+  "tp": {
+    "index": 0,
+    "predicted_probability": 0.7750200790374757,
+    "threshold": 0.28,
+    "predicted_class": 1,
+    "actual_class": 1,
+    "base_value": 0.5002909301651699,
+    "top_positive": [
+      {
+        "feature": "cat__Contract_Month-to-month",
+        "shap_value": 0.059554772115913264,
+        "feature_value": 1.0
+      },
+      {
+        "feature": "cat__InternetService_Fiber optic",
+        "shap_value": 0.041082189167878584,
+        "feature_value": 1.0
+      },
+      {
+        "feature": "cat__PaymentMethod_Electronic check",
+        "shap_value": 0.033479464335246276,
+        "feature_value": 1.0
+      },
+      {
+        "feature": "cat__TechSupport_No",
+        "shap_value": 0.02526930755576382,
+        "feature_value": 1.0
+      },
+      {
+        "feature": "num__MonthlyCharges",
+        "shap_value": 0.02339725903988006,
+        "feature_value": 96.05
+      }
+    ],
+    "top_negative": [
+      {
+        "feature": "cat__OnlineSecurity_No",
+        "shap_value": -0.03055200129306395,
+        "feature_value": 0.0
+      },
+      {
+        "feature": "num__TotalCharges",
+        "shap_value": -0.015028800490117723,
+        "feature_value": 1740.7
+      },
+      {
+        "feature": "cat__OnlineSecurity_Yes",
+        "shap_value": -0.01480806093718664,
+        "feature_value": 1.0
+      },
+      {
+        "feature": "cat__MultipleLines_Yes",
+        "shap_value": -0.010519170083361798,
+        "feature_value": 0.0
+      },
+      {
+        "feature": "cat__MultipleLines_No",
+        "shap_value": -0.010312980056551289,
+        "feature_value": 1.0
+      }
+    ],
+    "all_shap": {
+      "num__MonthlyCharges": 0.02339725903988006,
+      "num__SeniorCitizen": -0.0005161273174285403,
+      "num__TotalCharges": -0.015028800490117723,
+      "num__tenure": 0.00916291374948403,
+      "cat__Contract_Month-to-month": 0.059554772115913264,
+      "cat__Contract_One year": 0.008913090923639266,
+      "cat__Contract_Two year": 0.023161426947083903,
+      "cat__Dependents_No": 0.0036081459666717788,
+      "cat__Dependents_Yes": 0.0037243170219837035,
+      "cat__DeviceProtection_No": 0.002777064235724427,
+      "cat__DeviceProtection_No internet service": 0.006001624576161583,
+      "cat__DeviceProtection_Yes": 0.0011245947591045288,
+      "cat__InternetService_DSL": 0.018666686957153417,
+      "cat__InternetService_Fiber optic": 0.041082189167878584,
+      "cat__InternetService_No": 0.005313718509762647,
+      "cat__MultipleLines_No": -0.010312980056551289,
+      "cat__MultipleLines_No phone service": 0.0004922147002992126,
+      "cat__MultipleLines_Yes": -0.010519170083361798,
+      "cat__OnlineBackup_No": 0.012399484752458315,
+      "cat__OnlineBackup_No internet service": 0.006963416858997246,
+      "cat__OnlineBackup_Yes": 0.0045845217542924655,
+      "cat__OnlineSecurity_No": -0.03055200129306395,
+      "cat__OnlineSecurity_No internet service": 0.0035784705386992886,
+      "cat__OnlineSecurity_Yes": -0.01480806093718664,
+      "cat__PaperlessBilling_No": 0.004793515547063704,
+      "cat__PaperlessBilling_Yes": 0.004889567768568929,
+      "cat__Partner_No": 0.0009746814737180006,
+      "cat__Partner_Yes": 0.0026802190414250355,
+      "cat__PaymentMethod_Bank transfer (automatic)": 0.0027824454275001626,
+      "cat__PaymentMethod_Credit card (automatic)": 0.004163666494416136,
+      "cat__PaymentMethod_Electronic check": 0.033479464335246276,
+      "cat__PaymentMethod_Mailed check": 0.000470144394689277,
+      "cat__PhoneService_No": 0.0001753529122544553,
+      "cat__PhoneService_Yes": 0.0005335748694227774,
+      "cat__StreamingMovies_No": 0.0037388839437277267,
+      "cat__StreamingMovies_No internet service": 0.004998954064312668,
+      "cat__StreamingMovies_Yes": 0.003209759435923588,
+      "cat__StreamingTV_No": 0.007518155891924252,
+      "cat__StreamingTV_No internet service": 0.00705468462087895,
+      "cat__StreamingTV_Yes": 0.00844609482361971,
+      "cat__TechSupport_No": 0.02526930755576382,
+      "cat__TechSupport_No internet service": 0.0059225303113957664,
+      "cat__TechSupport_Yes": 0.005312023127646182,
+      "cat__gender_Female": -0.0016893370402702493,
+      "cat__gender_Male": -0.002763312524398795
+    }
+  },
+  "tn": {
+    "index": 1,
+    "predicted_probability": 0.04442279018636419,
+    "threshold": 0.28,
+    "predicted_class": 0,
+    "actual_class": 0,
+    "base_value": 0.5002909301651699,
+    "top_positive": [
+      {
+        "feature": "num__tenure",
+        "shap_value": 0.03657897554833563,
+        "feature_value": 8.0
+      },
+      {
+        "feature": "num__TotalCharges",
+        "shap_value": 0.009062144654575824,
+        "feature_value": 201.7
+      },
+      {
+        "feature": "cat__InternetService_DSL",
+        "shap_value": 0.006372890197458492,
+        "feature_value": 0.0
+      },
+      {
+        "feature": "cat__OnlineSecurity_Yes",
+        "shap_value": 0.0036754907267581675,
+        "feature_value": 0.0
+      },
+      {
+        "feature": "cat__TechSupport_Yes",
+        "shap_value": 0.002802389100138576,
+        "feature_value": 0.0
+      }
+    ],
+    "top_negative": [
+      {
+        "feature": "cat__Contract_Month-to-month",
+        "shap_value": -0.09147180000413828,
+        "feature_value": 0.0
+      },
+      {
+        "feature": "cat__Contract_Two year",
+        "shap_value": -0.07335267633565766,
+        "feature_value": 1.0
+      },
+      {
+        "feature": "cat__TechSupport_No",
+        "shap_value": -0.04622401652218452,
+        "feature_value": 0.0
+      },
+      {
+        "feature": "cat__OnlineSecurity_No",
+        "shap_value": -0.041796975428613284,
+        "feature_value": 0.0
+      },
+      {
+        "feature": "cat__InternetService_Fiber optic",
+        "shap_value": -0.0333148010355422,
+        "feature_value": 0.0
+      }
+    ],
+    "all_shap": {
+      "num__MonthlyCharges": -0.030674435509161737,
+      "num__SeniorCitizen": -0.0012326342017981386,
+      "num__TotalCharges": 0.009062144654575824,
+      "num__tenure": 0.03657897554833563,
+      "cat__Contract_Month-to-month": -0.09147180000413828,
+      "cat__Contract_One year": 0.0010176021856327195,
+      "cat__Contract_Two year": -0.07335267633565766,
+      "cat__Dependents_No": -0.005294761120963176,
+      "cat__Dependents_Yes": -0.004669871497349228,
+      "cat__DeviceProtection_No": -0.0041864817605602005,
+      "cat__DeviceProtection_No internet service": -0.018024498144702857,
+      "cat__DeviceProtection_Yes": -0.0014481257083834246,
+      "cat__InternetService_DSL": 0.006372890197458492,
+      "cat__InternetService_Fiber optic": -0.0333148010355422,
+      "cat__InternetService_No": -0.015707973031994914,
+      "cat__MultipleLines_No": 0.0005726485493951333,
+      "cat__MultipleLines_No phone service": 0.0003147223726317504,
+      "cat__MultipleLines_Yes": -0.0016263175932820827,
+      "cat__OnlineBackup_No": -0.011118132685559121,
+      "cat__OnlineBackup_No internet service": -0.02080624337864334,
+      "cat__OnlineBackup_Yes": 0.0012732701782866332,
+      "cat__OnlineSecurity_No": -0.041796975428613284,
+      "cat__OnlineSecurity_No internet service": -0.014387636329892262,
+      "cat__OnlineSecurity_Yes": 0.0036754907267581675,
+      "cat__PaperlessBilling_No": -0.00995930610664292,
+      "cat__PaperlessBilling_Yes": -0.010743310440645807,
+      "cat__Partner_No": -0.002359072539141831,
+      "cat__Partner_Yes": -0.0030846774510832897,
+      "cat__PaymentMethod_Bank transfer (automatic)": -0.001075458119301753,
+      "cat__PaymentMethod_Credit card (automatic)": 0.0024339748851792136,
+      "cat__PaymentMethod_Electronic check": -0.015155582259543977,
+      "cat__PaymentMethod_Mailed check": -0.001405153650027814,
+      "cat__PhoneService_No": 0.00018651367857002194,
+      "cat__PhoneService_Yes": 0.00012992444690441325,
+      "cat__StreamingMovies_No": 0.0010804644136848725,
+      "cat__StreamingMovies_No internet service": -0.01592156324799801,
+      "cat__StreamingMovies_Yes": -0.004764265383845531,
+      "cat__StreamingTV_No": 0.000379028420960836,
+      "cat__StreamingTV_No internet service": -0.02034207497501257,
+      "cat__StreamingTV_Yes": -0.003141155273330883,
+      "cat__TechSupport_No": -0.04622401652218452,
+      "cat__TechSupport_No internet service": -0.01792000727160041,
+      "cat__TechSupport_Yes": 0.002802389100138576,
+      "cat__gender_Female": -3.028719930868783e-05,
+      "cat__gender_Male": -0.0005088851314069874
+    }
+  },
+  "fp": {
+    "index": 10,
+    "predicted_probability": 0.28002862140059076,
+    "threshold": 0.28,
+    "predicted_class": 1,
+    "actual_class": 0,
+    "base_value": 0.5002909301651699,
+    "top_positive": [
+      {
+        "feature": "cat__PaymentMethod_Electronic check",
+        "shap_value": 0.03897083067925882,
+        "feature_value": 1.0
+      },
+      {
+        "feature": "cat__InternetService_Fiber optic",
+        "shap_value": 0.02740935290214822,
+        "feature_value": 1.0
+      },
+      {
+        "feature": "cat__TechSupport_No",
+        "shap_value": 0.020950451597279367,
+        "feature_value": 1.0
+      },
+      {
+        "feature": "cat__Contract_Two year",
+        "shap_value": 0.019456481525519067,
+        "feature_value": 0.0
+      },
+      {
+        "feature": "cat__InternetService_DSL",
+        "shap_value": 0.011179627629518367,
+        "feature_value": 0.0
+      }
+    ],
+    "top_negative": [
+      {
+        "feature": "cat__Contract_Month-to-month",
+        "shap_value": -0.11635265683194236,
+        "feature_value": 0.0
+      },
+      {
+        "feature": "num__tenure",
+        "shap_value": -0.07659755797981875,
+        "feature_value": 62.0
+      },
+      {
+        "feature": "cat__OnlineSecurity_No",
+        "shap_value": -0.03773603598051437,
+        "feature_value": 0.0
+      },
+      {
+        "feature": "num__TotalCharges",
+        "shap_value": -0.03714767329802086,
+        "feature_value": 5755.8
+      },
+      {
+        "feature": "cat__Contract_One year",
+        "shap_value": -0.029687546655250585,
+        "feature_value": 1.0
+      }
+    ],
+    "all_shap": {
+      "num__MonthlyCharges": -0.016946000393071706,
+      "num__SeniorCitizen": -0.0008698335222103763,
+      "num__TotalCharges": -0.03714767329802086,
+      "num__tenure": -0.07659755797981875,
+      "cat__Contract_Month-to-month": -0.11635265683194236,
+      "cat__Contract_One year": -0.029687546655250585,
+      "cat__Contract_Two year": 0.019456481525519067,
+      "cat__Dependents_No": 0.00035046682261933573,
+      "cat__Dependents_Yes": 0.0006941392580153842,
+      "cat__DeviceProtection_No": 0.003494307666018832,
+      "cat__DeviceProtection_No internet service": 0.0036696241853623472,
+      "cat__DeviceProtection_Yes": 0.0033904367414004767,
+      "cat__InternetService_DSL": 0.011179627629518367,
+      "cat__InternetService_Fiber optic": 0.02740935290214822,
+      "cat__InternetService_No": 0.003341095583545065,
+      "cat__MultipleLines_No": 0.0018215881636477723,
+      "cat__MultipleLines_No phone service": -0.0002028773663584257,
+      "cat__MultipleLines_Yes": 0.0022059880242820064,
+      "cat__OnlineBackup_No": -0.010502365475163747,
+      "cat__OnlineBackup_No internet service": 0.003822406421145666,
+      "cat__OnlineBackup_Yes": -0.004969471381361255,
+      "cat__OnlineSecurity_No": -0.03773603598051437,
+      "cat__OnlineSecurity_No internet service": 0.0025269803454897335,
+      "cat__OnlineSecurity_Yes": -0.01603483047593498,
+      "cat__PaperlessBilling_No": 0.0039073046033198415,
+      "cat__PaperlessBilling_Yes": 0.0046375825747863855,
+      "cat__Partner_No": 0.0013159005589847982,
+      "cat__Partner_Yes": 0.0020659756425320482,
+      "cat__PaymentMethod_Bank transfer (automatic)": 0.0025314582309086072,
+      "cat__PaymentMethod_Credit card (automatic)": 0.002466685376819637,
+      "cat__PaymentMethod_Electronic check": 0.03897083067925882,
+      "cat__PaymentMethod_Mailed check": -0.00030537509017116007,
+      "cat__PhoneService_No": -0.00035560132738287844,
+      "cat__PhoneService_Yes": -0.0001427361662110844,
+      "cat__StreamingMovies_No": -0.010984594003894628,
+      "cat__StreamingMovies_No internet service": 0.0032815470434273708,
+      "cat__StreamingMovies_Yes": -0.01084202250455361,
+      "cat__StreamingTV_No": -0.00800558848817203,
+      "cat__StreamingTV_No internet service": 0.00430251382323456,
+      "cat__StreamingTV_Yes": -0.009882938423029298,
+      "cat__TechSupport_No": 0.020950451597279367,
+      "cat__TechSupport_No internet service": 0.003937211548895201,
+      "cat__TechSupport_Yes": 0.005851791123192526,
+      "cat__gender_Female": -0.0054601713003266245,
+      "cat__gender_Male": -0.004818180172540133
+    }
+  },
+  "fn": {
+    "index": 7,
+    "predicted_probability": 0.27305681750092864,
+    "threshold": 0.28,
+    "predicted_class": 0,
+    "actual_class": 1,
+    "base_value": 0.5002909301651699,
+    "top_positive": [
+      {
+        "feature": "cat__Contract_Month-to-month",
+        "shap_value": 0.06121197085202542,
+        "feature_value": 1.0
+      },
+      {
+        "feature": "num__tenure",
+        "shap_value": 0.03067107207199244,
+        "feature_value": 5.0
+      },
+      {
+        "feature": "cat__Contract_Two year",
+        "shap_value": 0.026044928495384957,
+        "feature_value": 0.0
+      },
+      {
+        "feature": "num__TotalCharges",
+        "shap_value": 0.01283516790222918,
+        "feature_value": 126.05
+      },
+      {
+        "feature": "cat__Contract_One year",
+        "shap_value": 0.009196993331690285,
+        "feature_value": 0.0
+      }
+    ],
+    "top_negative": [
+      {
+        "feature": "cat__TechSupport_No",
+        "shap_value": -0.04901069337387313,
+        "feature_value": 0.0
+      },
+      {
+        "feature": "cat__OnlineSecurity_No",
+        "shap_value": -0.04828646463279571,
+        "feature_value": 0.0
+      },
+      {
+        "feature": "num__MonthlyCharges",
+        "shap_value": -0.04809638657698712,
+        "feature_value": 19.35
+      },
+      {
+        "feature": "cat__InternetService_Fiber optic",
+        "shap_value": -0.04140179389185079,
+        "feature_value": 0.0
+      },
+      {
+        "feature": "cat__StreamingTV_No internet service",
+        "shap_value": -0.026288000875652015,
+        "feature_value": 1.0
+      }
+    ],
+    "all_shap": {
+      "num__MonthlyCharges": -0.04809638657698712,
+      "num__SeniorCitizen": -0.0020304006105091436,
+      "num__TotalCharges": 0.01283516790222918,
+      "num__tenure": 0.03067107207199244,
+      "cat__Contract_Month-to-month": 0.06121197085202542,
+      "cat__Contract_One year": 0.009196993331690285,
+      "cat__Contract_Two year": 0.026044928495384957,
+      "cat__Dependents_No": 0.004882167185959971,
+      "cat__Dependents_Yes": 0.004074531440843871,
+      "cat__DeviceProtection_No": -0.003865779799224987,
+      "cat__DeviceProtection_No internet service": -0.020735942291517127,
+      "cat__DeviceProtection_Yes": -0.0008414293681357661,
+      "cat__InternetService_DSL": 0.007185739004673465,
+      "cat__InternetService_Fiber optic": -0.04140179389185079,
+      "cat__InternetService_No": -0.021458524002916732,
+      "cat__MultipleLines_No": 0.000690194767073413,
+      "cat__MultipleLines_No phone service": 9.244087036922311e-05,
+      "cat__MultipleLines_Yes": -0.0013398394645207279,
+      "cat__OnlineBackup_No": -0.014137274971567911,
+      "cat__OnlineBackup_No internet service": -0.024971306149869366,
+      "cat__OnlineBackup_Yes": 0.0016373802143608781,
+      "cat__OnlineSecurity_No": -0.04828646463279571,
+      "cat__OnlineSecurity_No internet service": -0.016235518157751618,
+      "cat__OnlineSecurity_Yes": 0.004418216070296977,
+      "cat__PaperlessBilling_No": -0.008363835592689483,
+      "cat__PaperlessBilling_Yes": -0.009125929732410713,
+      "cat__Partner_No": 0.0004860927289349593,
+      "cat__Partner_Yes": 0.002306254863279245,
+      "cat__PaymentMethod_Bank transfer (automatic)": -0.002544077534941178,
+      "cat__PaymentMethod_Credit card (automatic)": 0.005502632302583271,
+      "cat__PaymentMethod_Electronic check": -0.018065436831095575,
+      "cat__PaymentMethod_Mailed check": -0.001979297164817142,
+      "cat__PhoneService_No": -0.0001278838076424417,
+      "cat__PhoneService_Yes": -0.00028707806378485193,
+      "cat__StreamingMovies_No": 0.0010868713648938154,
+      "cat__StreamingMovies_No internet service": -0.01717179266938766,
+      "cat__StreamingMovies_Yes": -0.003172410610237682,
+      "cat__StreamingTV_No": 0.0006973449555453578,
+      "cat__StreamingTV_No internet service": -0.026288000875652015,
+      "cat__StreamingTV_Yes": -0.0024636294684694847,
+      "cat__TechSupport_No": -0.04901069337387313,
+      "cat__TechSupport_No internet service": -0.021291186061937455,
+      "cat__TechSupport_Yes": 0.0031207458529901775,
+      "cat__gender_Female": -0.0006978472665994385,
+      "cat__gender_Male": 0.0006149020318184672
+    }
+  }
+}

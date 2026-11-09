@@ -373,13 +373,13 @@ A separate business cost optimization was run for the **Tuned LogisticRegression
 ## Testing & Code Quality
 
 ```bash
-uv run pytest          # 385 tests pass
+uv run pytest          # 385 tests collected (full suite timeout in CI)
 uv run ruff check .    # Linting clean
 uv run mypy src        # Type checking clean (src)
 uv run pyright src     # Type checking clean (src); 55 errors in test files (missing stubs)
 ```
 
-**Test coverage**: 385 tests covering data loading, preprocessing, pipeline structure, model configs, threshold optimization, metric correctness, OOF leakage checks, business cost logic, and Phase 14 Data Contract validation.
+**Test coverage**: 385 tests collected covering data loading, preprocessing, pipeline structure, model configs, threshold optimization, metric correctness, OOF leakage checks, business cost logic, and Phase 14 Data Contract validation.
 
 ---
 

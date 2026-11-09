@@ -581,7 +581,7 @@ def save_calibrated_model_metadata(results: dict[str, Any], output_path: Path) -
     """Persist calibrated model metadata as JSON.
 
     This artifact documents the Phase 12 calibrated model experiment
-    (rejected; production uses uncalibrated RF at 0.27 threshold).
+    (rejected; historical Phase 8C RF used 0.27 threshold from Phase 11).
     """
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -605,7 +605,7 @@ def save_calibrated_model_metadata(results: dict[str, Any], output_path: Path) -
         "production_threshold_source": "Phase 11 business cost optimization",
         "status": "rejected_experiment",
         "note": "Phase 12 calibrated model evaluated but NOT adopted for production inference. "
-        "Production uses uncalibrated RF with 0.27 threshold from Phase 11.",
+        "Historical Phase 8C RF used 0.27 threshold from Phase 11; current production uses Tuned LR at 0.10.",
         "selection_rationale": results["selection_rationale"],
         "metrics_comparison": results["metrics_comparison"],
     }

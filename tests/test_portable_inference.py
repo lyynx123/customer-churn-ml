@@ -170,17 +170,17 @@ def test_feature_ordering_is_correct(artifacts_dir):
     assert schema["feature_order"] == expected
 
 
-def test_threshold_equals_027(artifacts_dir):
-    """Production threshold equals 0.27."""
+def test_threshold_equals_010(artifacts_dir):
+    """Production threshold equals 0.10."""
     with open(artifacts_dir / "inference_metadata.json") as f:
         metadata = json.load(f)
 
-    assert metadata["production_threshold"] == 0.27
-    assert metadata["threshold_metadata"]["value"] == 0.27
+    assert metadata["production_threshold"] == 0.10
+    assert metadata["threshold_metadata"]["value"] == 0.10
     assert metadata["threshold_metadata"]["source_phase"] == "Phase 11"
     assert (
         metadata["threshold_metadata"]["selection_method"]
-        == "Business cost optimization on OOF probabilities"
+        == "Business cost optimization on OOF probabilities (Tuned LogisticRegression)"
     )
 
 
@@ -212,7 +212,7 @@ def test_predictor_loads_successfully(artifacts_dir):
 def test_explicit_artifact_directory_works(artifacts_dir):
     """Explicit artifact directory parameter works."""
     predictor = PortableChurnPredictor.from_artifacts(artifact_dir=artifacts_dir)
-    assert predictor.threshold == 0.27
+    assert predictor.threshold == 0.10
 
 
 def test_no_training_data_access_required(artifacts_dir):
@@ -220,14 +220,14 @@ def test_no_training_data_access_required(artifacts_dir):
     # This test passes if import/load succeeds without accessing data/processed/
     # The fact that from_artifacts works without loading features.py config is the test
     predictor = PortableChurnPredictor.from_artifacts(artifacts_dir)
-    assert predictor.threshold == 0.27
+    assert predictor.threshold == 0.10
 
 
 def test_threshold_comes_from_metadata(artifacts_dir):
     """Threshold is loaded from inference_metadata.json, not hardcoded."""
     predictor = PortableChurnPredictor.from_artifacts(artifacts_dir)
-    assert predictor.threshold == 0.27
-    assert predictor._metadata.production_threshold == 0.27
+    assert predictor.threshold == 0.10
+    assert predictor._metadata.production_threshold == 0.10
 
 
 def test_integrity_verification_works(artifacts_dir):
@@ -694,7 +694,7 @@ def test_extract_inference_artifacts_function(artifacts_dir):
 
         assert "numeric_features" in schema
         assert "categorical_features" in schema
-        assert metadata["production_threshold"] == 0.27
+        assert metadata["production_threshold"] == 0.10
         assert (tmpdir / "inference_schema.json").exists()
         assert (tmpdir / "inference_metadata.json").exists()
 
@@ -767,8 +767,8 @@ def test_metadata_has_required_fields(artifacts_dir):
 def test_inference_metadata_class(artifacts_dir):
     """InferenceMetadata class loads correctly."""
     metadata = InferenceMetadata.from_json(artifacts_dir / "inference_metadata.json")
-    assert metadata.production_threshold == 0.27
-    assert metadata.threshold == 0.27
+    assert metadata.production_threshold == 0.10
+    assert metadata.threshold == 0.10
     assert metadata.threshold_metadata["source_phase"] == "Phase 11"
 
 

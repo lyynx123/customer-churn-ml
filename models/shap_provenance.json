@@ -1,0 +1,29 @@
+{
+  "production_model_artifact": "models/final_pipeline.joblib",
+  "model_type": "RandomForestClassifier",
+  "phase_8c_config": {
+    "n_estimators": 500,
+    "max_depth": 10,
+    "min_samples_split": 2,
+    "min_samples_leaf": 4,
+    "max_features": "sqrt",
+    "class_weight": "balanced",
+    "random_state": 42,
+    "n_jobs": -1
+  },
+  "business_threshold": 0.28,
+  "output_space": "probability (positive-class output from tree_path_dependent SHAP)",
+  "positive_class": "Yes",
+  "positive_class_index": 1,
+  "expected_value_class1": 0.5002909301651699,
+  "feature_count": 45,
+  "shap_version": "0.52.0",
+  "sklearn_version": "1.9.1",
+  "python_version": "3.12.14",
+  "reference_source": "training split (deterministic subset, reproducibility only)",
+  "reference_sample_size": 500,
+  "explanation_source": "frozen test split (post-hoc visualization only)",
+  "random_seed": 42,
+  "phase12_calibrated_model_explained": false,
+  "leakage_note": "Test data used only for post-hoc visualization; never for model decisions."
+}

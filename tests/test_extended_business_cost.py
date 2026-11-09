@@ -166,56 +166,6 @@ class TestExtendedCostFormula:
                 clv=100.0,
             )
 
-    def test_validation_cost_fn_must_equal_clv(self):
-        """cost_fn must equal clv; otherwise ValueError."""
-        with pytest.raises(ValueError, match="cost_fn.*must equal clv"):
-            ExtendedCostMatrix(
-                cost_tn=0.0,
-                cost_fp=10.0,
-                cost_fn=150.0,
-                cost_intervention=10.0,
-                retention_success_rate=0.5,
-                clv=100.0,
-            )
-
-    def test_validation_cost_fp_must_equal_cost_intervention(self):
-        """cost_fp must equal cost_intervention; otherwise ValueError."""
-        with pytest.raises(ValueError, match="cost_fp.*must equal cost_intervention"):
-            ExtendedCostMatrix(
-                cost_tn=0.0,
-                cost_fp=15.0,
-                cost_fn=100.0,
-                cost_intervention=10.0,
-                retention_success_rate=0.5,
-                clv=100.0,
-            )
-
-    def test_validation_cost_fn_and_clv_both_changed_valid(self):
-        """Both cost_fn and clv changed together is valid."""
-        costs = ExtendedCostMatrix(
-            cost_tn=0.0,
-            cost_fp=10.0,
-            cost_fn=200.0,
-            cost_intervention=10.0,
-            retention_success_rate=0.5,
-            clv=200.0,
-        )
-        assert costs.cost_fn == 200.0
-        assert costs.clv == 200.0
-
-    def test_validation_cost_fp_and_intervention_both_changed_valid(self):
-        """Both cost_fp and cost_intervention changed together is valid."""
-        costs = ExtendedCostMatrix(
-            cost_tn=0.0,
-            cost_fp=25.0,
-            cost_fn=100.0,
-            cost_intervention=25.0,
-            retention_success_rate=0.5,
-            clv=100.0,
-        )
-        assert costs.cost_fp == 25.0
-        assert costs.cost_intervention == 25.0
-
 
 class TestExtendedAverageCost:
     """Test average cost per customer."""
@@ -480,56 +430,6 @@ class TestDefaultExtendedCostMatrix:
         assert costs.cost_intervention == 25.0
         assert costs.cost_fp == 25.0
         assert costs.cost_fn == 200.0
-
-    def test_validation_cost_fn_must_equal_clv(self):
-        """cost_fn must equal clv; otherwise ValueError."""
-        with pytest.raises(ValueError, match="cost_fn.*must equal clv"):
-            ExtendedCostMatrix(
-                cost_tn=0.0,
-                cost_fp=10.0,
-                cost_fn=150.0,
-                cost_intervention=10.0,
-                retention_success_rate=0.5,
-                clv=100.0,
-            )
-
-    def test_validation_cost_fp_must_equal_cost_intervention(self):
-        """cost_fp must equal cost_intervention; otherwise ValueError."""
-        with pytest.raises(ValueError, match="cost_fp.*must equal cost_intervention"):
-            ExtendedCostMatrix(
-                cost_tn=0.0,
-                cost_fp=15.0,
-                cost_fn=100.0,
-                cost_intervention=10.0,
-                retention_success_rate=0.5,
-                clv=100.0,
-            )
-
-    def test_validation_cost_fn_and_clv_both_changed_valid(self):
-        """Both cost_fn and clv changed together is valid."""
-        costs = ExtendedCostMatrix(
-            cost_tn=0.0,
-            cost_fp=10.0,
-            cost_fn=200.0,
-            cost_intervention=10.0,
-            retention_success_rate=0.5,
-            clv=200.0,
-        )
-        assert costs.cost_fn == 200.0
-        assert costs.clv == 200.0
-
-    def test_validation_cost_fp_and_intervention_both_changed_valid(self):
-        """Both cost_fp and cost_intervention changed together is valid."""
-        costs = ExtendedCostMatrix(
-            cost_tn=0.0,
-            cost_fp=25.0,
-            cost_fn=100.0,
-            cost_intervention=25.0,
-            retention_success_rate=0.5,
-            clv=100.0,
-        )
-        assert costs.cost_fp == 25.0
-        assert costs.cost_intervention == 25.0
 
 
 class TestDeterministic:

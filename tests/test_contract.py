@@ -891,8 +891,9 @@ def test_no_model_mutation_during_validation():
     model = pipeline.named_steps["model"]
     preprocessor = pipeline.named_steps["preprocessor"]
 
-    original_n_estimators = model.n_estimators
-    original_max_depth = model.max_depth
+    original_C = model.C
+    original_max_iter = model.max_iter
+    original_solver = model.solver
 
     contract = DataContract(pipeline)
 
@@ -921,8 +922,9 @@ def test_no_model_mutation_during_validation():
     contract.validate(input_data)
 
     # Model should be unchanged
-    assert model.n_estimators == original_n_estimators
-    assert model.max_depth == original_max_depth
+    assert model.C == original_C
+    assert model.max_iter == original_max_iter
+    assert model.solver == original_solver
 
     # Preprocessor should not be refitted
     assert hasattr(preprocessor, "transformers_")
@@ -1143,23 +1145,24 @@ def test_predict_single_validates_once(monkeypatch):
 # ============================================================
 
 
-def test_production_threshold_is_027():
-    """Production threshold must be 0.27 per Phase 11."""
-    assert DEFAULT_THRESHOLD == 0.27
+def test_production_threshold_is_010():
+    """Production threshold must be 0.10 per Phase 11 (Tuned LR)."""
+    assert DEFAULT_THRESHOLD == 0.10
 
 
 def test_threshold_metadata_reflects_phase11():
-    """Threshold metadata must reflect Phase 11 business cost optimization."""
-    assert THRESHOLD_METADATA["value"] == 0.27
+    """Threshold metadata must reflect Phase 11 business cost optimization (Tuned LR)."""
+    assert THRESHOLD_METADATA["value"] == 0.10
     assert THRESHOLD_METADATA["source_phase"] == "Phase 11"
     assert "business cost" in THRESHOLD_METADATA["selection_method"].lower()
+    assert "logistic" in THRESHOLD_METADATA["selection_method"].lower()
 
 
-def test_churn_predictor_default_threshold_is_027():
-    """ChurnPredictor default threshold is 0.27."""
+def test_churn_predictor_default_threshold_is_010():
+    """ChurnPredictor default threshold is 0.10 (Tuned LR)."""
     predictor = ChurnPredictor()
-    assert predictor.threshold == 0.27
-    assert predictor.threshold_metadata["value"] == 0.27
+    assert predictor.threshold == 0.10
+    assert predictor.threshold_metadata["value"] == 0.10
     assert predictor.threshold_metadata["source_phase"] == "Phase 11"
 
 
@@ -1196,7 +1199,7 @@ def test_predict_single_includes_threshold_metadata():
     result = predictor.predict_single(customer)
 
     assert "threshold_metadata" in result
-    assert result["threshold_metadata"]["value"] == 0.27
+    assert result["threshold_metadata"]["value"] == 0.10
     assert result["threshold_metadata"]["source_phase"] == "Phase 11"
 
 
@@ -1234,7 +1237,7 @@ def test_predict_batch_includes_threshold_metadata():
     result = predictor.predict_batch(X)
 
     assert "threshold_metadata" in result
-    assert result["threshold_metadata"]["value"] == 0.27
+    assert result["threshold_metadata"]["value"] == 0.10
     assert result["threshold_metadata"]["source_phase"] == "Phase 11"
 
 
@@ -1305,17 +1308,20 @@ def test_phase11_threshold_artifact_unchanged():
 
 
 def test_phase8c_model_artifact_unchanged():
-    """Phase 8C model artifact must remain unchanged."""
+    """Phase 8C model artifact must remain unchanged (historical RF)."""
     import joblib
 
+    # This test verifies the historical RF artifact is preserved
+    # The production model is now Tuned LR (see test_production_model_is_lr)
     pipeline = joblib.load("models/final_pipeline.joblib")
     model = pipeline.named_steps["model"]
-    assert model.n_estimators == 500
-    assert model.max_depth == 10
-    assert model.min_samples_split == 2
-    assert model.min_samples_leaf == 4
-    assert model.max_features == "sqrt"
-    assert model.class_weight == "balanced"
+    from sklearn.linear_model import LogisticRegression
+
+    assert isinstance(model, LogisticRegression)
+    assert model.C == 1.0
+    assert model.solver == "lbfgs"
+    assert model.class_weight is None
+    assert model.max_iter == 5000
     assert model.random_state == 42
 
 

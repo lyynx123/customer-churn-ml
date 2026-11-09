@@ -24,7 +24,7 @@ from numpy.typing import NDArray
 
 @dataclass(frozen=True)
 class ExtendedCostMatrix:
-    """Extended business cost model with retention success rate.
+    """Extended business cost matrix with retention success rate.
 
     All costs expressed in same monetary unit (e.g., dollars).
     retention_success_rate (r) is an EXTERNAL BUSINESS ASSUMPTION.
@@ -32,10 +32,8 @@ class ExtendedCostMatrix:
 
     Fields:
         cost_tn: Cost when no action taken and customer stays (typically 0).
-        cost_fp: Mirror of cost_intervention for Phase 11 compatibility.
-                 The formula uses cost_intervention. cost_fp must equal cost_intervention.
-        cost_fn: Mirror of clv for Phase 11 compatibility.
-                 The formula uses clv. cost_fn must equal clv.
+        cost_fp: Cost of intervention given to customer who would not churn (wasted).
+        cost_fn: Cost when churner not contacted (lost CLV).
         cost_intervention: Cost of making an intervention (applies to FP and TP).
         retention_success_rate: r in [0, 1], probability intervention retains a churner.
         clv: Customer lifetime value (gross value saved if churner retained).
@@ -60,21 +58,6 @@ class ExtendedCostMatrix:
         ]:
             if value < 0:
                 raise ValueError(f"{name}={value} must be non-negative.")
-
-        # cost_fp and cost_fn are mirrors for Phase 11 compatibility.
-        # The formula uses cost_intervention and clv respectively.
-        if self.cost_fp != self.cost_intervention:
-            raise ValueError(
-                f"cost_fp={self.cost_fp} must equal cost_intervention={self.cost_intervention}. "
-                "cost_fp is a mirror field for Phase 11 artifact compatibility; "
-                "the formula uses cost_intervention."
-            )
-        if self.cost_fn != self.clv:
-            raise ValueError(
-                f"cost_fn={self.cost_fn} must equal clv={self.clv}. "
-                "cost_fn is a mirror field for Phase 11 artifact compatibility; "
-                "the formula uses clv."
-            )
 
         r = self.retention_success_rate
         if not 0.0 <= r <= 1.0:
@@ -367,7 +350,7 @@ def baseline_costs(
 
 
 def build_default_extended_cost_matrix(
-    retention_success_rate: float = 1.0,
+    retention_success_rate: float = 0.5,
     clv: float = 100.0,
     cost_intervention: float = 10.0,
 ) -> ExtendedCostMatrix:

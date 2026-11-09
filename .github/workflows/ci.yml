@@ -42,7 +42,12 @@ jobs:
         run: |
           uv run python -m customer_churn.business_threshold_optimizer
 
-      # Extract portable inference artifacts (requires business_cost_analysis.json)
+      # Generate Phase 11 business cost artifacts for Tuned LR (production model)
+      - name: Generate Phase 11 business cost artifacts (Tuned LR)
+        run: |
+          uv run python -m customer_churn.business_threshold_optimizer_lr
+
+      # Extract portable inference artifacts (requires tuned_lr_business_cost_analysis.json)
       - name: Extract inference artifacts
         run: |
           uv run python scripts/extract_inference_artifacts.py
@@ -66,9 +71,12 @@ jobs:
           uv run python -m customer_churn.calibration
 
       # Generate Phase 13 SHAP explainability artifacts (for test_phase13_artifacts_unchanged)
-      - name: Generate Phase 13 SHAP explainability artifacts
-        run: |
-          uv run python -m customer_churn.explain
+      # Skipped for current production model (Tuned LogisticRegression) as SHAP TreeExplainer
+      # only supports tree-based models. SHAP artifacts were generated for historical
+      # RandomForest model and are preserved as historical artifacts.
+      # - name: Generate Phase 13 SHAP explainability artifacts
+      #   run: |
+      #     uv run python -m customer_churn.explain
 
       - name: Run tests
         run: uv run pytest -q

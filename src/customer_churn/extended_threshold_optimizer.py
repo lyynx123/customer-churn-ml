@@ -24,7 +24,6 @@ from .extended_business_cost import (
     ExtendedBusinessCostResult,
     ExtendedCostMatrix,
     baseline_costs,
-    build_default_extended_cost_matrix,
     compute_extended_business_cost_metrics,
     validate_extended_costs,
 )
@@ -236,7 +235,7 @@ def run_sensitivity_analysis(
         List of scenario results with cost assumptions and optimal thresholds.
     """
     if retention_rates is None:
-        retention_rates = [0.2, 0.4, 0.6, 0.8, 1.0]
+        retention_rates = [0.2, 0.4, 0.6, 0.8]
     if clv_values is None:
         clv_values = [100.0]
     if intervention_costs is None:
@@ -599,7 +598,7 @@ def run_phase11_extended(
         4. Save all artifacts.
 
     Args:
-        costs: Optional ExtendedCostMatrix. Defaults to r=1.0, clv=100, int=10 (reproduces Phase 11).
+        costs: Optional ExtendedCostMatrix. Defaults to r=0.5, clv=100, int=10.
         output_dir: Output directory for artifacts. Defaults to models/.
         sensitivity_config: Optional dict with keys retention_rates, clv_values,
             intervention_costs for sensitivity analysis.
@@ -608,7 +607,15 @@ def run_phase11_extended(
         Dictionary with all results and artifact paths.
     """
     if costs is None:
-        costs = build_default_extended_cost_matrix()
+        costs = ExtendedCostMatrix(
+            cost_tn=0.0,
+            cost_fp=10.0,
+            cost_fn=100.0,
+            cost_intervention=10.0,
+            retention_success_rate=0.5,
+            clv=100.0,
+            label="extended default: r=0.5, clv=100, int=10",
+        )
 
     if output_dir is None:
         output_dir = Path(__file__).resolve().parents[2] / "models"
@@ -764,7 +771,9 @@ def run_phase11_extended(
 
     print(f"\nTie-breaking rule: {result.tie_breaking_rule}")
 
-    print("\nNOTE: Phase 11 production threshold was 0.28 (r=1.0 implicit).")
+    print(
+        "\nNOTE: Phase 11 production threshold was 0.27 (r=1.0 implicit, RandomForest)."
+    )
     print(
         f"      Extended optimal threshold at r={costs.retention_success_rate} is {result.selected_threshold:.2f}."
     )

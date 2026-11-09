@@ -20,7 +20,7 @@ Telecommunications providers lose significant revenue when customers churn witho
 **Source**: Telco Customer Churn dataset (public, IBM/Kaggle)
 **Original rows**: 7,043
 **Features after cleaning**: 20 (after dropping `customerID`)
-**Missing data**: `TotalCharges` had 11 missing values (coerced to NaN, imputed via median)
+**Missing data**: `TotalCharges` had 11 missing values (empty strings), all for customers with `tenure=0`. In `data.py`, these are explicitly set to `0` (no billing history) before numeric coercion; no median imputation is applied at the cleaning stage.
 
 **Target distribution** (after cleaning):
 - No (stay): 5,174 (73.5%)
@@ -66,7 +66,8 @@ The project follows a strict phase-gated methodology to prevent data leakage:
 
 ### 1. Data Cleaning (`data.py`)
 - Load raw CSV, strip whitespace
-- Coerce `TotalCharges` to numeric (coerce errors → NaN)
+- **Handle `TotalCharges` missing values**: All 11 missing entries are for `tenure=0` customers (no billing history). These are explicitly set to `0` before numeric coercion.
+- Coerce `TotalCharges` to numeric (errors → NaN)
 - Drop `customerID` (non-predictive identifier)
 - Save cleaned parquet to `data/processed/`
 
@@ -74,13 +75,14 @@ The project follows a strict phase-gated methodology to prevent data leakage:
 - Stratified 49/21/30 split on `Churn` (70/30 train-test, then 70/30 train-val)
 - `random_state=42`, `shuffle=True`
 - Splits saved as parquet to `data/processed/`
+- **Validation set (1,479 rows, 21%)** is used for **model selection after hyperparameter tuning** (`tune.py::evaluate_on_validation`). After `RandomizedSearchCV` on training data, both tuned models are evaluated on the validation set using ROC-AUC, and the best model is selected. This gives the validation set a clear, documented purpose without changing split ratios or introducing leakage.
 
 ### 3. Preprocessing Pipeline (`features.py`)
-- **Numeric** (`MonthlyCharges`, `SeniorCitizen`, `TotalCharges`, `tenure`): median imputation
+- **Numeric** (`MonthlyCharges`, `SeniorCitizen`, `TotalCharges`, `tenure`): median imputation (fitted on training data; serves as a safety net — after cleaning, `TotalCharges` has no missing values in the current dataset)
 - **Categorical** (15 columns): most-frequent imputation + OneHotEncoder (`handle_unknown='ignore'`, dense output)
 - Encapsulated in `sklearn.compose.ColumnTransformer`
 - Wrapped in `sklearn.pipeline.Pipeline` with the model
-- **Fitted only on training data**; applied identically to val/test
+- **Fitted only on training data**; applied to test data during inference. Validation data is not used in the pipeline.
 
 ### 4. Baseline Modeling (`models.py`)
 - 5-fold Stratified CV on training data
@@ -99,6 +101,7 @@ The project follows a strict phase-gated methodology to prevent data leakage:
 - 5-fold StratifiedKFold, 30 iterations each
 - Optimized for ROC-AUC, all metrics recorded
 - Best RandomForest: `n_estimators=500, max_depth=10, min_samples_split=2, min_samples_leaf=4, max_features="sqrt", class_weight="balanced"`
+- **Validation-based model selection**: After tuning, both models are evaluated on the validation set (1,479 samples) using ROC-AUC. The model with the highest validation ROC-AUC is selected. This uses the validation set for its intended purpose (model selection) without leaking test data.
 
 ### 7. OOF Threshold Analysis (`threshold.py`) — Phase 8B
 - Out-of-fold probability predictions via `cross_val_predict` on training data
@@ -113,6 +116,7 @@ The project follows a strict phase-gated methodology to prevent data leakage:
 ### 8. Final Held-Out Test Evaluation (`final_evaluation.py`) — Phase 8C
 - Fit final pipeline on **entire training set** (3,451 samples)
 - Predict on **held-out test set** (2,113 samples)
+- Validation set (1,479 samples) was used for model selection in Phase 8A (`tune.py`).
 - Evaluate 4 predetermined thresholds: 0.45, 0.50, 0.55, 0.60
 - No hyperparameter/threshold tuning on test data
 
@@ -141,34 +145,34 @@ Phase 8B OOF analysis identified four candidate thresholds:
 
 | Threshold | Role | OOF Precision | OOF Recall | OOF F1 |
 |-----------|------|---------------|------------|--------|
-| 0.45      | Recall-oriented (Prec ≥ 0.50) | 0.5114 | 0.8100 | 0.6270 |
-| 0.50      | Default reference | 0.5331 | 0.7653 | 0.6284 |
-| 0.55      | F1-optimal (OOF) | 0.5635 | 0.7216 | 0.6328 |
-| 0.60      | Precision-oriented (Rec ≥ 0.60) | 0.5925 | 0.6572 | 0.6232 |
+| 0.45      | Recall-oriented (Prec ≥ 0.50) | 0.5127 | 0.8144 | 0.6293 |
+| 0.50      | Default reference | 0.5334 | 0.7664 | 0.6290 |
+| 0.55      | F1-optimal (OOF) | 0.5657 | 0.7238 | 0.6351 |
+| 0.60      | Precision-oriented (Rec ≥ 0.60) | 0.5921 | 0.6561 | 0.6225 |
 
 ## Final Test Results (Phase 8C)
 
 ### Model-Level Metrics
 | Metric | Test Value |
 |--------|------------|
-| **ROC-AUC** | 0.8388 |
-| **PR-AUC** | 0.6391 |
+| **ROC-AUC** | 0.8390 |
+| **PR-AUC** | 0.6398 |
 
 ### Threshold Evaluation (Held-Out Test Set)
 
 | Threshold | Precision | Recall | F1 | Accuracy | FPR | FNR | Pos Rate | TN | FP | FN | TP |
 |-----------|-----------|--------|----|----------|-----|-----|----------|----|----|----|----|
-| 0.45      | 0.5038    | 0.8235 | 0.6252 | 0.7378 | 0.2932 | 0.1765 | 0.4340 | 1097 | 455 | 99 | 462 |
-| 0.50      | 0.5224    | 0.7701 | 0.6225 | 0.7520 | 0.2545 | 0.2299 | 0.3914 | 1157 | 395 | 129 | 432 |
-| 0.55      | 0.5521    | 0.7273 | 0.6277 | 0.7709 | 0.2133 | 0.2727 | 0.3497 | 1221 | 331 | 153 | 408 |
-| 0.60      | 0.5706    | 0.6631 | 0.6134 | 0.7780 | 0.1804 | 0.3369 | 0.3086 | 1272 | 280 | 189 | 372 |
+| 0.45      | 0.5049    | 0.8235 | 0.6260 | 0.7388 | 0.2919 | 0.1765 | 0.4330 | 1099 | 453 | 99 | 462 |
+| 0.50      | 0.5234    | 0.7772 | 0.6255 | 0.7530 | 0.2558 | 0.2228 | 0.3942 | 1155 | 397 | 125 | 436 |
+| 0.55      | 0.5526    | 0.7308 | 0.6293 | 0.7714 | 0.2139 | 0.2692 | 0.3512 | 1220 | 332 | 151 | 410 |
+| 0.60      | 0.5684    | 0.6595 | 0.6106 | 0.7766 | 0.1811 | 0.3405 | 0.3081 | 1271 | 281 | 191 | 370 |
 
 ### OOF vs. Test Generalization
 
 | Metric | Phase 8B (OOF) | Phase 8C (Test) | Δ |
 |--------|----------------|-----------------|---|
-| ROC-AUC | 0.8477 | 0.8388 | -0.009 |
-| PR-AUC | 0.6671 | 0.6391 | -0.028 |
+| ROC-AUC | 0.8481 | 0.8390 | -0.009 |
+| PR-AUC | 0.6678 | 0.6398 | -0.028 |
 
 The small generalization gap suggests the model is not overfitting; calibration was not independently validated.
 
@@ -202,8 +206,8 @@ A fixed random seed improves reproducibility but does not guarantee bit-for-bit 
 ## How to Run
 
 ```bash
-# 1. Install dependencies
-uv sync
+# 1. Install dependencies (with dev tools)
+uv sync --extra dev
 
 # 2. Run tests
 uv run pytest
@@ -211,7 +215,7 @@ uv run pytest
 # 3. Lint & type-check
 uv run ruff check .
 uv run mypy src
-uv run pyright
+uv run pyright src
 
 # 4. Data preparation
 uv run python -m customer_churn.data
@@ -227,6 +231,19 @@ uv run python -m customer_churn.final_evaluation
 
 # 8. Train and serialize the inference pipeline
 uv run python -m customer_churn.predict
+
+# 9. Business cost optimization (Phase 11) - selects production threshold
+uv run python -m customer_churn.business_threshold_optimizer
+
+# 10. Probability calibration analysis (Phase 12) - evaluated, not adopted
+uv run python -m customer_churn.calibration
+
+# 11. SHAP explainability (Phase 13)
+uv run python -m customer_churn.explain
+
+# 12. Extract & verify portable inference artifacts (Phase 15)
+uv run python scripts/extract_inference_artifacts.py
+uv run python scripts/verify_inference_artifacts.py --artifacts-dir models
 ```
 
 ### Entry point distinction:
@@ -240,57 +257,57 @@ Note: Running these commands in sequence does not automatically reproduce every 
 
  **Environment**: Python 3.12+, `uv` package manager
 
- ## Inference
+## Inference
 
- The project provides a Python inference interface via `ChurnPredictor`:
+The project provides a Python inference interface via `ChurnPredictor`:
 
- ```python
- from customer_churn.predict import ChurnPredictor, load_pipeline
+```python
+from customer_churn.predict import ChurnPredictor, load_pipeline
 
- # Load the trained pipeline
- pipeline = load_pipeline()
+# Load the trained pipeline (Tuned LogisticRegression)
+pipeline = load_pipeline()
 
-# Create predictor with default threshold (0.27, business cost optimization from Phase 11)
-  predictor = ChurnPredictor()
+# Create predictor with default threshold (0.10, business cost optimization from Phase 11 on Tuned LR)
+predictor = ChurnPredictor()
 
- # Single prediction
- customer = {
-     "gender": "Female",
-     "SeniorCitizen": 0,
-     "Partner": "Yes",
-     "Dependents": "No",
-     "tenure": 12,
-     "PhoneService": "Yes",
-     "MultipleLines": "No",
-     "InternetService": "DSL",
-     "OnlineSecurity": "No",
-     "OnlineBackup": "No",
-     "DeviceProtection": "No",
-     "TechSupport": "No",
-     "StreamingTV": "No",
-     "StreamingMovies": "No",
-     "Contract": "Month-to-month",
-     "PaperlessBilling": "Yes",
-     "PaymentMethod": "Electronic check",
-     "MonthlyCharges": 75.50,
-     "TotalCharges": 29.85,
- }
-result = predictor.predict_single(sample)
-  # Returns: {'churn_probability': 0.77, 'threshold': 0.27,
-  # 'prediction': 1, 'prediction_label': 'Yes', ...}
+# Single prediction
+customer = {
+    "gender": "Female",
+    "SeniorCitizen": 0,
+    "Partner": "Yes",
+    "Dependents": "No",
+    "tenure": 12,
+    "PhoneService": "Yes",
+    "MultipleLines": "No",
+    "InternetService": "DSL",
+    "OnlineSecurity": "No",
+    "OnlineBackup": "No",
+    "DeviceProtection": "No",
+    "TechSupport": "No",
+    "StreamingTV": "No",
+    "StreamingMovies": "No",
+    "Contract": "Month-to-month",
+    "PaperlessBilling": "Yes",
+    "PaymentMethod": "Electronic check",
+    "MonthlyCharges": 75.50,
+    "TotalCharges": 29.85,
+}
+result = predictor.predict_single(customer)
+# Returns: {'churn_probability': 0.64, 'threshold': 0.10,
+# 'prediction': 1, 'prediction_label': 'Yes', ...}
 
- # Batch prediction
- import pandas as pd
+# Batch prediction
+import pandas as pd
 
- test_df = pd.read_parquet("data/processed/test.parquet")
- X_test = test_df.drop(columns=["Churn"])
+test_df = pd.read_parquet("data/processed/test.parquet")
+X_test = test_df.drop(columns=["Churn"])
 result = predictor.predict_batch(X_test.iloc[:10])
-  # Returns: {'predictions': [...], 'probabilities': [...], 'threshold': 0.27, ...}
+# Returns: {'predictions': [...], 'probabilities': [...], 'threshold': 0.10, ...}
 
- # Custom threshold
- result = predictor.predict_single(sample, threshold=0.45)
- # Returns prediction with custom threshold
- ```
+# Custom threshold
+result = predictor.predict_single(customer, threshold=0.45)
+# Returns prediction with custom threshold
+```
 
  **Environment**: Python 3.12+, `uv` package manager
 
@@ -316,13 +333,13 @@ result = predictor.predict_batch(X_test.iloc[:10])
 
  The frozen test set is strictly reserved for evaluation and does **not** participate in threshold selection.
 
- **Reproducible command**
- ```bash
- uv run python -m customer_churn.business_threshold_optimizer
- ```
-Running the optimization with the illustrative cost matrix (FN=100, FP=10, TP=10, TN=0) yields:
+**Reproducible command (RandomForest - Historical)**
+```bash
+uv run python -m customer_churn.business_threshold_optimizer
+```
+Running the optimization with the illustrative cost matrix (FN=100, FP=10, TP=10, TN=0) on the **RandomForest** model yields:
 
-- **OOF‑optimal business threshold:** `0.27`
+- **OOF‑optimal business threshold (RandomForest):** `0.27`
 - **OOF Metrics (at 0.27):**
   - `TN=1379, FP=1156, FN=65, TP=851`
   - `Precision = 0.4240, Recall = 0.9290, F1 = 0.5823, Accuracy = 0.6462`
@@ -330,34 +347,39 @@ Running the optimization with the illustrative cost matrix (FN=100, FP=10, TP=10
   - `Average cost per customer = $7.70`
 
 - **Frozen‑test evaluation (at 0.27):**
-  - `TN=835, FP=717, FN=44, TP=517`
-  - `Precision = 0.4190, Recall = 0.9216, F1 = 0.5760, Accuracy = 0.6398`
-  - `Total cost = $16,740`
-  - `Average cost per customer = $7.92`
+  - `TN=862, FP=690, FN=46, TP=515`
+  - `Precision = 0.4274, Recall = 0.9180, F1 = 0.5832, Accuracy = 0.6517`
+  - `Total cost = $16,650`
+  - `Average cost per customer = $7.88`
 
- **Artifacts generated**
- - `models/business_cost_analysis.json` – machine‑readable summary of the optimisation and test evaluation.
- - `models/business_cost_thresholds.csv` – per‑threshold metrics and costs.
- - `notebooks/figures/business_cost_curve.png` – cost vs. threshold plot (minimum highlighted).
- - `models/cost_sensitivity_analysis.csv` – illustrative sensitivity scenarios showing how the optimal threshold moves as the FN/FP cost ratio changes.
+**Phase 11 Business Cost Optimization (Tuned LogisticRegression - Current Production)**
+
+A separate business cost optimization was run for the **Tuned LogisticRegression** model (Phase 9), yielding:
+
+- **OOF‑optimal business threshold (Tuned LR):** `0.10`
+- This is the **current production threshold** used by `ChurnPredictor`.
+
+**Artifacts generated (RandomForest)**
+- `models/business_cost_analysis.json` – machine‑readable summary of the optimisation and test evaluation.
+- `models/business_cost_thresholds.csv` – per‑threshold metrics and costs.
+- `notebooks/figures/business_cost_curve.png` – cost vs. threshold plot (minimum highlighted).
+- `models/cost_sensitivity_analysis.csv` – illustrative sensitivity scenarios showing how the optimal threshold moves as the FN/FP cost ratio changes.
 
  **How to customise**
  Replace the `CostMatrix` values in `src/customer_churn/business_cost.py` or pass a custom `CostMatrix` instance to `run_phase11()` if you need different assumptions.
 
  ---
 
- ## Testing & Code Quality
+## Testing & Code Quality
 
- ```bash
- uv run pytest          # 394 tests pass
- uv run ruff check .    # Linting clean
- uv run mypy src        # Type checking clean
- uv run pyright src     # Type checking clean (main src)
- ```
+```bash
+uv run pytest          # 385 tests collected (full suite timeout in CI)
+uv run ruff check .    # Linting clean
+uv run mypy src        # Type checking clean (src)
+uv run pyright src     # Type checking clean (src); 55 errors in test files (missing stubs)
+```
 
- **Test coverage**: 394 tests covering data loading, preprocessing, pipeline structure, model configs, threshold optimization, metric correctness, OOF leakage checks, business cost logic, Phase 14 Data Contract validation, and extended business cost modeling.
-
- See [Model Selection Decision](docs/model-selection.md) for the RF vs LR decision rationale and cost assumptions.
+**Test coverage**: 385 tests collected covering data loading, preprocessing, pipeline structure, model configs, threshold optimization, metric correctness, OOF leakage checks, business cost logic, and Phase 14 Data Contract validation.
 
 ---
 
@@ -380,7 +402,7 @@ Existing Production Pipeline
    \u2193
 P(Churn=Yes)
    \u2193
-Production Threshold = 0.27
+Production Threshold = 0.10
    \u2193
 Prediction
 ```
@@ -409,21 +431,23 @@ The production model expects exactly **19 features**:
 - **Schema source**: Categorical domains are derived from the fitted production pipeline's `OneHotEncoder`, not hardcoded
 - **Pipeline instance**: The DataContract uses the *exact same* fitted pipeline instance as `ChurnPredictor` \u2014 no second model is loaded
 
-### Production threshold: `0.27`
+### Production threshold: `0.10`
 
-The production decision threshold is **0.27**, selected in Phase 11 via business cost optimization (OOF probabilities). This is the default for `ChurnPredictor`.
+The **current production model** is a **Tuned LogisticRegression** (Phase 9/14/15), with a decision threshold of **0.10** selected in Phase 11 via business cost optimization on OOF probabilities (Tuned LR). This is the default for `ChurnPredictor`.
 
-Phase 12 probability calibration was evaluated but **not adopted** \u2014 the frozen-test business cost at 0.27 is `$16,740` (TN=835, FP=717, FN=44, TP=517).
+**Historical context**: The earlier Phase 8C/11 RandomForest model used a threshold of **0.27** (Phase 11 business cost optimization on OOF probabilities for RandomForest). Phase 12 probability calibration was evaluated but **not adopted** for the RandomForest model \u2014 the frozen-test business cost at 0.27 was `$16,650` (TN=862, FP=690, FN=46, TP=515).
 
 ---
 
 ## SHAP Explainability (Phase 13)
 
-**Purpose**: Post-hoc explanation of the production RandomForest model to understand feature contributions to churn probability.
+**Purpose**: Post-hoc explanation of the **historical Phase 8C RandomForest model** (not the current production Tuned LR) to understand feature contributions to churn probability.
 
-**Method**: `shap.TreeExplainer` with `model_output="raw"` and default `feature_perturbation="tree_path_dependent"`. The explained model output is the positive-class prediction from the production scikit-learn RandomForest (P(churn=Yes)). Under this configuration, Tree SHAP returns values in the model's native output space (probability space for this estimator). `tree_path_dependent` is the default feature-dependence/background assumption for Tree SHAP; it uses the tree structure to define the background and does not use an interventional background dataset.
+**Method**: `shap.TreeExplainer` with `model_output="raw"` and default `feature_perturbation="tree_path_dependent"`. The explained model output is the positive-class prediction from the historical scikit-learn RandomForest (P(churn=Yes)). Under this configuration, Tree SHAP returns values in the model's native output space (probability space for this estimator). `tree_path_dependent` is the default feature-dependence/background assumption for Tree SHAP; it uses the tree structure to define the background and does not use an interventional background dataset.
 
-**Production boundary**: Only the Phase 8C/11 uncalibrated RandomForest (`models/final_pipeline.joblib`) is explained. Phase 12 calibrated model is NOT explained (rejected experiment).
+**Model explained**: Only the Phase 8C/11 uncalibrated RandomForest (`models/final_pipeline.joblib` as it existed before Phase 9) is explained. The current production model is Tuned LogisticRegression (Phase 9/14/15) with threshold 0.10. Phase 12 calibrated model is NOT explained (rejected experiment).
+
+**Threshold note**: Historical SHAP artifacts were generated using a Random Forest decision threshold of 0.28. The business cost optimization in Phase 11 later identified 0.27 as the optimal threshold. Therefore, 0.28 represents the threshold used when generating the SHAP artifacts, while 0.27 represents the business-optimal threshold.
 
 **Leakage-safe design**:
 - **Reference/reproducibility sample**: 500 deterministic samples from training split only (never test). Under `tree_path_dependent`, Tree SHAP does not use an interventional background dataset; the returned sample is retained for reproducibility and reference.
@@ -442,7 +466,7 @@ Phase 12 probability calibration was evaluated but **not adopted** \u2014 the fr
 | Global importance (transformed) | `models/shap_global_importance.csv` | 45 features ranked by mean \|SHAP\| |
 | Global importance (original grouped) | `models/shap_grouped_importance.csv` | 19 original features aggregated (sum of \|SHAP\| avoids one-hot cancellation) |
 | Feature mapping | `models/shap_feature_mapping.json` | Transformed → original feature mapping |
-| Local explanations | `models/shap_local_explanations.json` | TP/TN/FP/FN waterfall data (threshold 0.27) |
+| Local explanations | `models/shap_local_explanations.json` | TP/TN/FP/FN waterfall data (threshold 0.27, historical RF) |
 | Provenance metadata | `models/shap_provenance.json` | Model config, SHAP version, background/explanation sources, leakage note |
 | Summary plot | `notebooks/figures/shap_summary.png` | Beeswarm plot (top 20 features) |
 | Bar plot | `notebooks/figures/shap_bar.png` | Top 20 mean \|SHAP\| |
@@ -451,19 +475,19 @@ Phase 12 probability calibration was evaluated but **not adopted** \u2014 the fr
 **Top global features (original, grouped)**:
 | Original Feature | Mean \|SHAP\| | Mean Signed SHAP |
 |------------------|--------------|------------------|
-| Contract | 0.116 | -0.010 |
-| InternetService | 0.065 | -0.012 |
-| TechSupport | 0.054 | -0.012 |
-| tenure | 0.054 | -0.009 |
-| OnlineSecurity | 0.050 | -0.011 |
+| Contract | 0.125 | -0.038 |
+| InternetService | 0.061 | -0.003 |
+| TechSupport | 0.053 | -0.019 |
+| tenure | 0.050 | -0.019 |
+| OnlineSecurity | 0.050 | -0.019 |
 
-**Local examples (threshold 0.27)**:
+**Local examples (historical RF, threshold 0.27)**:
 | Sample | Index | P(churn) | Pred | Actual | Top positive contributors |
 |--------|-------|----------|------|--------|---------------------------|
-| TP | 0 | 0.775 | 1 | 1 | Contract_Month-to-month (+0.060), InternetService_Fiber optic (+0.042), PaymentMethod_Electronic check (+0.033), TechSupport_No (+0.025), Contract_Two year (+0.024) |
-| TN | 1 | 0.046 | 0 | 0 | tenure (+0.037), TotalCharges (+0.009), InternetService_DSL (+0.006), OnlineSecurity_Yes (+0.004), TechSupport_Yes (+0.003) |
-| FP | 10 | 0.284 | 1 | 0 | PaymentMethod_Electronic check (+0.039), InternetService_Fiber optic (+0.027), TechSupport_No (+0.021), Contract_Two year (+0.020), InternetService_DSL (+0.012) |
-| FN | 7 | 0.265 | 0 | 1 | Contract_Month-to-month (+0.061), tenure (+0.030), Contract_Two year (+0.026), TotalCharges (+0.011), Contract_One year (+0.009) |
+| TP | 0 | 0.775 | 1 | 1 | Contract_Month-to-month (+0.27), TechSupport_No (+0.08), ... |
+| TN | 1 | 0.044 | 0 | 0 | Contract_Two_year (-0.11), tenure (-0.09), ... |
+| FP | 10 | 0.280 | 1 | 0 | Contract_Month-to-month (+0.15), MonthlyCharges (+0.04), ... |
+| FN | 7 | 0.273 | 0 | 1 | Contract_Two_year (-0.09), TotalCharges (-0.07), ... |
 
 **Reproducible command**:
 ```bash
@@ -485,7 +509,7 @@ uv run python -m customer_churn.explain
 1. **Single held-out test split** — no temporal or geographic validation
 2. **Illustrative business cost matrix** — TN=0, FP=10, FN=100, TP=10. These assumptions must be validated or replaced with real financial and stakeholder inputs before production use.
 3. **No temporal validation** — data not evaluated for temporal stability
-4. **Calibration evaluated but not adopted** — Phase 12 evaluated sigmoid/isotonic calibration; sigmoid selected but uncalibrated RF retained for production
+4. **Calibration evaluated but not adopted** — Phase 12 evaluated sigmoid/isotonic calibration for RandomForest; sigmoid selected but uncalibrated RF retained for historical artifact. Current production uses Tuned LR (uncalibrated) at threshold 0.10.
 5. **Lightweight in-memory observability only** — Phase 15 `MetricsCollector` provides structured logging; no persistent production monitoring
 6. **Static features** — no temporal/behavioral feature engineering
 7. **Class imbalance** (~26.5% churn) handled via `class_weight='balanced'` only

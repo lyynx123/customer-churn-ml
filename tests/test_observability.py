@@ -95,7 +95,7 @@ class TestMetricsCollector:
         """Test recording successful single prediction."""
         collector = MetricsCollector(
             model_artifact_hash="abc123",
-            default_threshold=0.28,
+            default_threshold=0.27,
         )
         event = collector.record_success(
             event_type="predict_single",
@@ -103,7 +103,7 @@ class TestMetricsCollector:
             positive_predictions=1,
             negative_predictions=0,
             latency_ms=15.5,
-            threshold=0.28,
+            threshold=0.27,
             batch_size=1,
         )
         assert isinstance(event, MetricsEvent)
@@ -112,7 +112,7 @@ class TestMetricsCollector:
         assert event.positive_predictions == 1
         assert event.negative_predictions == 0
         assert event.latency_ms == 15.5
-        assert event.threshold == 0.28
+        assert event.threshold == 0.27
         assert event.batch_size == 1
         assert event.error_category is None
 
@@ -125,7 +125,7 @@ class TestMetricsCollector:
             positive_predictions=25,
             negative_predictions=75,
             latency_ms=45.2,
-            threshold=0.28,
+            threshold=0.27,
             batch_size=100,
         )
         assert event.prediction_count == 100
@@ -136,9 +136,9 @@ class TestMetricsCollector:
     def test_invocation_vs_prediction_counts(self):
         """Test invocation count differs from prediction count."""
         collector = MetricsCollector()
-        collector.record_success("predict_single", 1, 1, 0, 10.0, 0.28, 1)
-        collector.record_success("predict_batch", 50, 10, 40, 30.0, 0.28, 50)
-        collector.record_success("predict_single", 1, 0, 1, 12.0, 0.28, 1)
+        collector.record_success("predict_single", 1, 1, 0, 10.0, 0.27, 1)
+        collector.record_success("predict_batch", 50, 10, 40, 30.0, 0.27, 50)
+        collector.record_success("predict_single", 1, 0, 1, 12.0, 0.27, 1)
 
         assert collector.invocation_count == 3
         assert collector.total_predictions == 52
@@ -151,7 +151,7 @@ class TestMetricsCollector:
         event = collector.record_failure(
             event_type="predict_batch",
             error_category=ErrorCategory.VALIDATION_ERROR,
-            threshold=0.28,
+            threshold=0.27,
             latency_ms=5.0,
             batch_size=10,
         )
@@ -164,14 +164,14 @@ class TestMetricsCollector:
     def test_inference_failure_categorization(self):
         """Test inference error categorization."""
         collector = MetricsCollector()
-        collector.record_failure("predict", ErrorCategory.INFERENCE_ERROR, 0.28)
+        collector.record_failure("predict", ErrorCategory.INFERENCE_ERROR, 0.27)
         assert collector.inference_failure_count == 1
 
     def test_artifact_integrity_failure_categorization(self):
         """Test artifact integrity error categorization."""
         collector = MetricsCollector()
         collector.record_failure(
-            "from_artifacts", ErrorCategory.ARTIFACT_INTEGRITY_ERROR, 0.28
+            "from_artifacts", ErrorCategory.ARTIFACT_INTEGRITY_ERROR, 0.27
         )
         assert collector.artifact_integrity_failure_count == 1
 
@@ -179,15 +179,15 @@ class TestMetricsCollector:
         """Test artifact loading error categorization."""
         collector = MetricsCollector()
         collector.record_failure(
-            "from_artifacts", ErrorCategory.ARTIFACT_LOAD_ERROR, 0.28
+            "from_artifacts", ErrorCategory.ARTIFACT_LOAD_ERROR, 0.27
         )
         assert collector.artifact_load_failure_count == 1
 
     def test_failed_not_counted_as_success(self):
         """Failed calls must not be counted as successful."""
         collector = MetricsCollector()
-        collector.record_success("predict", 1, 1, 0, 10.0, 0.28)
-        collector.record_failure("predict", ErrorCategory.VALIDATION_ERROR, 0.28)
+        collector.record_success("predict", 1, 1, 0, 10.0, 0.27)
+        collector.record_failure("predict", ErrorCategory.VALIDATION_ERROR, 0.27)
         assert collector.success_count == 1
         assert collector.failure_count == 1
         assert collector.invocation_count == 2
@@ -198,13 +198,13 @@ class TestMetricsCollector:
         start = time.perf_counter()
         time.sleep(0.01)
         latency = (time.perf_counter() - start) * 1000
-        event = collector.record_success("predict", 1, 1, 0, latency, 0.28)
+        event = collector.record_success("predict", 1, 1, 0, latency, 0.27)
         assert event.latency_ms >= 10.0
 
     def test_utc_timestamp_format(self):
         """Test UTC timestamp is ISO format."""
         collector = MetricsCollector()
-        event = collector.record_success("predict", 1, 1, 0, 10.0, 0.28)
+        event = collector.record_success("predict", 1, 1, 0, 10.0, 0.27)
         assert event.timestamp.endswith("+00:00") or event.timestamp.endswith("Z")
         assert "T" in event.timestamp
 
@@ -212,7 +212,7 @@ class TestMetricsCollector:
         """Test multiple calls aggregated by same collector."""
         collector = MetricsCollector()
         for i in range(5):
-            collector.record_success("predict", 1, 1, 0, 10.0, 0.28)
+            collector.record_success("predict", 1, 1, 0, 10.0, 0.27)
         assert collector.invocation_count == 5
         assert collector.total_predictions == 5
         assert len(collector.events) == 5
@@ -220,16 +220,16 @@ class TestMetricsCollector:
     def test_empty_batch_not_supported(self):
         """Test empty batch handling (if supported)."""
         collector = MetricsCollector()
-        event = collector.record_success("predict_batch", 0, 0, 0, 5.0, 0.28, 0)
+        event = collector.record_success("predict_batch", 0, 0, 0, 5.0, 0.27, 0)
         assert event.prediction_count == 0
         assert event.batch_size == 0
 
     def test_get_summary(self):
         """Test summary aggregation."""
-        collector = MetricsCollector(model_artifact_hash="abc", default_threshold=0.28)
-        collector.record_success("predict", 1, 1, 0, 10.0, 0.28)
-        collector.record_success("predict_batch", 10, 3, 7, 30.0, 0.28, 10)
-        collector.record_failure("predict", ErrorCategory.VALIDATION_ERROR, 0.28)
+        collector = MetricsCollector(model_artifact_hash="abc", default_threshold=0.27)
+        collector.record_success("predict", 1, 1, 0, 10.0, 0.27)
+        collector.record_success("predict_batch", 10, 3, 7, 30.0, 0.27, 10)
+        collector.record_failure("predict", ErrorCategory.VALIDATION_ERROR, 0.27)
 
         summary = collector.get_summary()
         assert summary["invocation_count"] == 3
@@ -240,13 +240,13 @@ class TestMetricsCollector:
         assert summary["positive_predictions"] == 4
         assert summary["negative_predictions"] == 7
         assert summary["model_artifact_hash"] == "abc"
-        assert summary["default_threshold"] == 0.28
+        assert summary["default_threshold"] == 0.27
 
     def test_write_jsonl(self, tmp_path):
         """Test JSONL output."""
         collector = MetricsCollector()
-        collector.record_success("predict", 1, 1, 0, 10.0, 0.28)
-        collector.record_success("predict_batch", 5, 2, 3, 25.0, 0.28, 5)
+        collector.record_success("predict", 1, 1, 0, 10.0, 0.27)
+        collector.record_success("predict_batch", 5, 2, 3, 25.0, 0.27, 5)
 
         output_path = tmp_path / "metrics.jsonl"
         collector.write_jsonl(output_path)
@@ -263,7 +263,7 @@ class TestMetricsCollector:
     def test_clear(self):
         """Test clearing collector."""
         collector = MetricsCollector()
-        collector.record_success("predict", 1, 1, 0, 10.0, 0.28)
+        collector.record_success("predict", 1, 1, 0, 10.0, 0.27)
         collector.clear()
         assert collector.invocation_count == 0
         assert collector.total_predictions == 0
@@ -324,7 +324,7 @@ class TestMetricsContext:
     def test_successful_context(self):
         """Context manager records timing but not success (no prediction counts available)."""
         collector = MetricsCollector()
-        with metrics_context(collector, "predict_batch", threshold=0.28, batch_size=10):
+        with metrics_context(collector, "predict_batch", threshold=0.27, batch_size=10):
             time.sleep(0.01)
 
         # Context manager only records failures; success recording happens in predictor methods
@@ -335,7 +335,7 @@ class TestMetricsContext:
     def test_failed_context(self):
         collector = MetricsCollector()
         try:
-            with metrics_context(collector, "predict", threshold=0.28):
+            with metrics_context(collector, "predict", threshold=0.27):
                 raise PortableValidationError("missing field", ["field1"])
         except PortableValidationError:
             pass
@@ -354,7 +354,7 @@ class TestCreateCollectorFromMetadata:
             version="1.0",
             model_type="RandomForestClassifier",
             model_version="1.0",
-            production_threshold=0.28,
+            production_threshold=0.27,
             threshold_metadata={},
             preprocessing={},
             artifact_integrity={"pipeline_sha256": "abc123"},
@@ -362,7 +362,7 @@ class TestCreateCollectorFromMetadata:
         )
         collector = create_collector_from_metadata(metadata)
         assert collector.model_artifact_hash == "abc123"
-        assert collector.default_threshold == 0.28
+        assert collector.default_threshold == 0.27
 
 
 class TestPortablePredictorWithMetrics:

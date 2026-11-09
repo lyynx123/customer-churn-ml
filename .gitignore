@@ -15,3 +15,7 @@ models/
 # Local data and evaluation artifacts
 data/
 *.npy
+
+# Keep model artifacts for CI (historical SHAP artifacts for RandomForest)
+!models/shap_*.json
+!models/shap_*.csv

@@ -373,13 +373,13 @@ A separate business cost optimization was run for the **Tuned LogisticRegression
 ## Testing & Code Quality
 
 ```bash
-uv run pytest          # 326 tests pass
+uv run pytest          # 385 tests pass
 uv run ruff check .    # Linting clean
 uv run mypy src        # Type checking clean (src)
 uv run pyright src     # Type checking clean (src); 55 errors in test files (missing stubs)
 ```
 
-**Test coverage**: 326 tests covering data loading, preprocessing, pipeline structure, model configs, threshold optimization, metric correctness, OOF leakage checks, business cost logic, and Phase 14 Data Contract validation.
+**Test coverage**: 385 tests covering data loading, preprocessing, pipeline structure, model configs, threshold optimization, metric correctness, OOF leakage checks, business cost logic, and Phase 14 Data Contract validation.
 
 ---
 
@@ -402,7 +402,7 @@ Existing Production Pipeline
    \u2193
 P(Churn=Yes)
    \u2193
-Production Threshold = 0.28
+Production Threshold = 0.10
    \u2193
 Prediction
 ```
@@ -446,6 +446,8 @@ The **current production model** is a **Tuned LogisticRegression** (Phase 9/14/1
 **Method**: `shap.TreeExplainer` with `model_output="raw"` and default `feature_perturbation="tree_path_dependent"`. The explained model output is the positive-class prediction from the historical scikit-learn RandomForest (P(churn=Yes)). Under this configuration, Tree SHAP returns values in the model's native output space (probability space for this estimator). `tree_path_dependent` is the default feature-dependence/background assumption for Tree SHAP; it uses the tree structure to define the background and does not use an interventional background dataset.
 
 **Model explained**: Only the Phase 8C/11 uncalibrated RandomForest (`models/final_pipeline.joblib` as it existed before Phase 9) is explained. The current production model is Tuned LogisticRegression (Phase 9/14/15) with threshold 0.10. Phase 12 calibrated model is NOT explained (rejected experiment).
+
+**Threshold note**: Historical SHAP artifacts were generated using a Random Forest decision threshold of 0.28. The business cost optimization in Phase 11 later identified 0.27 as the optimal threshold. Therefore, 0.28 represents the threshold used when generating the SHAP artifacts, while 0.27 represents the business-optimal threshold.
 
 **Leakage-safe design**:
 - **Reference/reproducibility sample**: 500 deterministic samples from training split only (never test). Under `tree_path_dependent`, Tree SHAP does not use an interventional background dataset; the returned sample is retained for reproducibility and reference.

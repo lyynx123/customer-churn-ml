@@ -35,7 +35,7 @@ After implementing the missing evaluations for Tuned LogisticRegression, the res
 
 | Metric | Tuned LR | Tuned RF | Winner |
 |--------|----------|----------|--------|
-| **OOF Optimal Threshold** | 0.10 | 0.28 | - |
+| **OOF Optimal Threshold** | 0.10 | 0.27 | - |
 | **OOF Total Cost** | **$26,000** | $26,650 | **LR** |
 | **OOF Avg Cost/Customer** | **$7.53** | $7.72 | **LR** |
 | **OOF Precision** | 0.4094 | 0.4289 | RF |
@@ -45,7 +45,7 @@ After implementing the missing evaluations for Tuned LogisticRegression, the res
 | **Test Precision** | 0.4043 | 0.4274 | RF |
 | **Test Recall** | **0.9376** | 0.9180 | **LR** |
 
-**LR achieves lower business cost at a more aggressive threshold (0.10 vs 0.28) with higher recall.**
+**LR achieves lower business cost at a more aggressive threshold (0.10 vs 0.27) with higher recall.**
 
 ---
 

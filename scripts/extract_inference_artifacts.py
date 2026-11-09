@@ -2,7 +2,7 @@
 
 This script creates two artifact files from the fitted production pipeline:
 - inference_schema.json: Feature schema derived from fitted OneHotEncoder
-- inference_metadata.json: Production metadata including threshold 0.28
+- inference_metadata.json: Production metadata including threshold 0.27
 
 Usage:
     uv run python scripts/extract_inference_artifacts.py

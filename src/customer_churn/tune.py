@@ -24,7 +24,7 @@ from sklearn.model_selection import (
     cross_validate,
 )
 
-from .config import RANDOM_SEED
+from .config import BASE_DIR, RANDOM_SEED
 from .features import TARGET_COL, build_preprocessor, load_data
 from .models import SCORING, build_model_pipeline
 
@@ -694,8 +694,9 @@ if __name__ == "__main__":
     print()
 
     # Save artifacts
-    output_path = "/home/ahmad_izzuddin_ulinnuha/projects/Customer_Churn/models/tuning_results.json"
-    save_tuning_results(results, output_path)
+    output_path = BASE_DIR / "models" / "tuning_results.json"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    save_tuning_results(results, str(output_path))
     print(f"Tuning results saved to {output_path}")
 
     # Save validation results

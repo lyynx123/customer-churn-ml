@@ -597,7 +597,17 @@ dev = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "ipykernel" },
+    { name = "jupyter" },
+    { name = "matplotlib" },
+    { name = "mypy" },
+    { name = "nbconvert" },
+    { name = "nbformat" },
     { name = "pyright" },
+    { name = "pytest" },
+    { name = "ruff" },
+    { name = "seaborn" },
+    { name = "shap" },
 ]
 
 [package.metadata]
@@ -622,7 +632,19 @@ requires-dist = [
 provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pyright", specifier = ">=1.1.414" }]
+dev = [
+    { name = "ipykernel", specifier = ">=6.27" },
+    { name = "jupyter", specifier = ">=1.0" },
+    { name = "matplotlib", specifier = ">=3.7" },
+    { name = "mypy", specifier = ">=1.5" },
+    { name = "nbconvert", specifier = ">=7.16" },
+    { name = "nbformat", specifier = ">=5.9" },
+    { name = "pyright", specifier = ">=1.1.414" },
+    { name = "pytest", specifier = ">=7.4" },
+    { name = "ruff", specifier = ">=0.1" },
+    { name = "seaborn", specifier = ">=0.12" },
+    { name = "shap", specifier = ">=0.44" },
+]
 
 [[package]]
 name = "cycler"
